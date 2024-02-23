@@ -1,4 +1,4 @@
-name: vl_vesselannotationpropagator
+name: nlp
 channels:
   - defaults
   - miniconda3
@@ -10,4 +10,4 @@ dependencies:
   - transformers
   - torch
   - torchvision
-  - torchaudiogit a
+  - torchaudio
