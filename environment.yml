@@ -1,0 +1,13 @@
+name: vl_vesselannotationpropagator
+channels:
+  - defaults
+  - miniconda3
+dependencies:
+  - python=3.10
+  - numpy
+  - scipy
+  - tqdm
+  - transformers
+  - torch
+  - torchvision
+  - torchaudiogit a
