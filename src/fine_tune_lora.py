@@ -1,72 +1,98 @@
-from datasets import load_dataset
+from datasets import load_dataset, concatenate_datasets
 from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer
-from peft import PeftModel, PeftConfig, get_peft_model, LoraConfig, TaskType
-from datasets import concatenate_datasets
-from utilities import preprocess_function
+from peft import get_peft_model, LoraConfig, TaskType
+import random
 
-MODEL_NAME = "google/flan-t5-small"
-TASK_NAME = "mmlu_lora_testing"
-OUTPUT_DIR = f"models/prompt-tuning-{TASK_NAME}"
+MODEL_NAME = "t5-small"
+LOADED_DATASET = "cais/mmlu"
+DATASET_CONFIG = "abstract_algebra"
+OUTPUT_DIR = "models/prompt-tuning-mmlu_lora_testing"
+MAX_LENGTH = 512
+NUM_TRAIN_EXAMPLES = 100
+NUM_TEST_EXAMPLES = 16
+SEED = 42
+TRAIN_EPOCHS = 3
+LEARNING_RATE = 2e-5
+WEIGHT_DECAY = 0.01
+BATCH_SIZE = 8
+LOGGING_STEPS = 500
+SAVE_LIMIT = 3
 
-# Preprocess and tokenize data
-dataset = load_dataset('cais/mmlu','abstract_algebra')
-merged_dataset = concatenate_datasets([dataset['test'], dataset['validation'], dataset['dev']])
-merged_dataset = merged_dataset.shuffle(seed=42)
-train_dataset = merged_dataset.select(range(100))
-test_dataset = merged_dataset.select(range(100, 116))
+random.seed(SEED)
 
-processed_train_dataset = train_dataset.map(preprocess_function, batched=True, remove_columns=train_dataset.column_names)
-processed_test_dataset = test_dataset.map(preprocess_function, batched=True, remove_columns=test_dataset.column_names)
+def preprocess_and_tokenize_data(tokenizer, examples, question_key, choices_key, answer_key):
+    input_texts = []
+    target_texts = []
 
-tokenizer = T5Tokenizer.from_pretrained("t5-small")
+    for question, choices, answer in zip(examples[question_key], examples[choices_key], examples[answer_key]):
+        input_text = f"question: {question} options: {', '.join(choices)}"
+        target_text = choices[answer]
+        input_texts.append(input_text)
+        target_texts.append(target_text)
 
-def tokenize_function(examples):
-    inputs = tokenizer(examples["input_text"], padding="max_length", truncation=True, max_length=512)
-    outputs = tokenizer(examples["target_text"], padding="max_length", truncation=True, max_length=512)
-    return {"input_ids": inputs["input_ids"], "attention_mask": inputs["attention_mask"],
-            "labels": outputs["input_ids"]}
+    tokenized_inputs = tokenizer(input_texts, padding="max_length", truncation=True, max_length=MAX_LENGTH)
+    tokenized_targets = tokenizer(target_texts, padding="max_length", truncation=True, max_length=MAX_LENGTH)
 
-tokenized_train_dataset = processed_train_dataset.map(tokenize_function, batched=True)
-tokenized_test_dataset = processed_test_dataset.map(tokenize_function, batched=True)
+    return {
+        "input_ids": tokenized_inputs["input_ids"],
+        "attention_mask": tokenized_inputs["attention_mask"],
+        "labels": tokenized_targets["input_ids"],
+    }
 
-model = T5ForConditionalGeneration.from_pretrained("t5-small")
 
-lora_config = LoraConfig(
-    r = 4,
-    lora_alpha = 32,
-    lora_dropout = 0.01,
-    #bias = "none",
-    task_type = TaskType.SEQ_2_SEQ_LM,
-)
+def prepare_datasets(num_train, num_test):
+    original_dataset = load_dataset(LOADED_DATASET, DATASET_CONFIG)
+    merged_dataset = concatenate_datasets([original_dataset['test'], original_dataset['validation'], original_dataset['dev']])
+    merged_dataset = merged_dataset.shuffle(seed=SEED)
+    train_dataset = merged_dataset.select(range(num_train))
+    test_dataset = merged_dataset.select(range(num_train, num_train + num_test))
+    return train_dataset, test_dataset
 
-lora_model=get_peft_model(model, lora_config)
-lora_model.print_trainable_parameters()
+def main():
+    tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
+    model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
-training_args = TrainingArguments(
-    output_dir="output",
-    num_train_epochs=3,
-    per_device_train_batch_size=8,
-    per_device_eval_batch_size=8,
-    evaluation_strategy="epoch",
-    save_strategy="epoch",
-    learning_rate=2e-5,
-    weight_decay=0.01,
-    logging_steps=500,
-    save_total_limit=3,
-    # fp16=True, # uncomment this if GPU is available
-    push_to_hub = False
-)
+    lora_config = LoraConfig(
+        r=4,
+        lora_alpha=32,
+        lora_dropout=0.01,
+        task_type=TaskType.SEQ_2_SEQ_LM,
+    )
 
-trainer = Trainer(
-    model=lora_model,
-    args=training_args,
-    train_dataset=tokenized_train_dataset,
-    eval_dataset=tokenized_test_dataset,
-)
+    model = get_peft_model(model, lora_config)
 
-lora_model.config.use_cache = False
-trainer.train()
+    training_args = TrainingArguments(
+        output_dir="output",
+        num_train_epochs=TRAIN_EPOCHS,
+        per_device_train_batch_size=BATCH_SIZE,
+        per_device_eval_batch_size=BATCH_SIZE,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        learning_rate=LEARNING_RATE,
+        weight_decay=WEIGHT_DECAY,
+        logging_steps=LOGGING_STEPS,
+        save_total_limit=SAVE_LIMIT,
+        push_to_hub=False,
+        # fp16=True, # Enable for FP16 training if supported by hardware
+    )
 
-peft_model_id=OUTPUT_DIR
-trainer.model.save_pretrained(peft_model_id)
-tokenizer.save_pretrained(peft_model_id)
+    train_dataset, test_dataset = prepare_datasets(NUM_TRAIN_EXAMPLES, NUM_TEST_EXAMPLES)
+
+    tokenized_train_dataset = train_dataset.map(lambda x: preprocess_and_tokenize_data(tokenizer, x, 'question', 'choices', 'answer'), batched=True)
+    tokenized_test_dataset = test_dataset.map(lambda x: preprocess_and_tokenize_data(tokenizer, x, 'question', 'choices', 'answer'), batched=True)
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=tokenized_train_dataset,
+        eval_dataset=tokenized_test_dataset,
+    )
+
+    model.config.use_cache = False
+    trainer.train()
+
+    trainer.model.save_pretrained(OUTPUT_DIR)
+    tokenizer.save_pretrained(OUTPUT_DIR)
+
+if __name__ == "__main__":
+    main()
