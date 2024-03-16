@@ -6,16 +6,16 @@ import random
 MODEL_NAME = "t5-small"
 LOADED_DATASET = "cais/mmlu"
 DATASET_CONFIG = "abstract_algebra"
-OUTPUT_DIR = "models/prompt-tuning-mmlu_lora_testing"
+OUTPUT_DIR = "models/mmlu_lora_testing"
 MAX_LENGTH = 512
 NUM_TRAIN_EXAMPLES = 100
 NUM_TEST_EXAMPLES = 16
 SEED = 42
-TRAIN_EPOCHS = 3
+TRAIN_EPOCHS = 100
 LEARNING_RATE = 2e-5
 WEIGHT_DECAY = 0.01
 BATCH_SIZE = 8
-LOGGING_STEPS = 500
+LOGGING_STEPS = 10
 SAVE_LIMIT = 3
 
 random.seed(SEED)

@@ -19,8 +19,8 @@
   "rank_pattern": {},
   "revision": null,
   "target_modules": [
-    "v",
-    "q"
+    "q",
+    "v"
   ],
   "task_type": "SEQ_2_SEQ_LM",
   "use_dora": false,
