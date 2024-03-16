@@ -1,7 +1,26 @@
+from transformers import (
+    T5Tokenizer,
+    T5ForConditionalGeneration,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    DataCollatorWithPadding,
+    TrainingArguments,
+    Trainer,
+)
+from peft import (
+    PromptEncoder,
+    PromptEncoderConfig,
+    get_peft_config,
+    get_peft_model,
+    get_peft_model_state_dict,
+    set_peft_model_state_dict,
+    PeftType,
+    PromptEncoderConfig,
+)
 from datasets import load_dataset, concatenate_datasets
-from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer
-from peft import get_peft_model, LoraConfig, TaskType
 import random
+import evaluate
+import torch
 
 MODEL_NAME = "t5-small"
 LOADED_DATASET = "cais/mmlu"
@@ -20,11 +39,11 @@ SAVE_LIMIT = 3
 
 random.seed(SEED)
 
-def preprocess_and_tokenize_data(tokenizer, examples, question_key, choices_key, answer_key):
+def preprocess_and_tokenize_data_lora(tokenizer, x, question_key, choices_key, answer_key):
     input_texts = []
     target_texts = []
 
-    for question, choices, answer in zip(examples[question_key], examples[choices_key], examples[answer_key]):
+    for question, choices, answer in zip(x[question_key], x[choices_key], x[answer_key]):
         input_text = f"question: {question} options: {', '.join(choices)}"
         target_text = choices[answer]
         input_texts.append(input_text)
@@ -48,18 +67,24 @@ def prepare_datasets(num_train, num_test):
     test_dataset = merged_dataset.select(range(num_train, num_train + num_test))
     return train_dataset, test_dataset
 
+
 def main():
     tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
     model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
-    lora_config = LoraConfig(
-        r=4,
-        lora_alpha=32,
-        lora_dropout=0.01,
-        task_type=TaskType.SEQ_2_SEQ_LM,
+    config = PromptEncoderConfig(
+        peft_type="P_TUNING",
+        task_type="SEQ_2_SEQ_LM",
+        num_virtual_tokens=20,
+        token_dim=768,
+        num_transformer_submodules=1,
+        num_attention_heads=12,
+        num_layers=12,
+        encoder_reparameterization_type="MLP",
+        encoder_hidden_size=768,
     )
 
-    model = get_peft_model(model, lora_config)
+    prompt_encoder = PromptEncoder(config)
 
     training_args = TrainingArguments(
         output_dir="output",
@@ -78,8 +103,8 @@ def main():
 
     train_dataset, test_dataset = prepare_datasets(NUM_TRAIN_EXAMPLES, NUM_TEST_EXAMPLES)
 
-    tokenized_train_dataset = train_dataset.map(lambda x: preprocess_and_tokenize_data(tokenizer, x, 'question', 'choices', 'answer'), batched=True)
-    tokenized_test_dataset = test_dataset.map(lambda x: preprocess_and_tokenize_data(tokenizer, x, 'question', 'choices', 'answer'), batched=True)
+    tokenized_train_dataset = train_dataset.map(lambda x: preprocess_and_tokenize_data_lora(tokenizer, x, 'question', 'choices', 'answer'), batched=True)
+    tokenized_test_dataset = test_dataset.map(lambda x: preprocess_and_tokenize_data_lora(tokenizer, x, 'question', 'choices', 'answer'), batched=True)
 
     trainer = Trainer(
         model=model,
