@@ -20,19 +20,15 @@ tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
 model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
 def tokenize_function(examples):
-    model_inputs = tokenizer(examples["source"], truncation=True, max_length=tokenizer.model_max_length)
-    with tokenizer.as_target_tokenizer():
-        model_inputs["target"] = tokenizer.as_target_tokenizer(examples["target"], max_length=tokenizer.model_max_length)
+    model_inputs = tokenizer(text=examples["source"], text_target=examples["target"], truncation=True, max_length=tokenizer.model_max_length)
     return model_inputs
 
 tokenized_datasets = mc_qa_dataset.map(
     tokenize_function,
     batched=True,
-    remove_columns=["source", "task_name", "task_source", "template_type", "template_idx", "split"],
+    remove_columns=["source", "task_name", "task_source", "template_type", "template_idx", "split", "target"],
 )
-
-tokenized_datasets = tokenized_datasets.rename_column("target", "labels")
-
+print(tokenized_datasets)
 config = PromptEncoderConfig(
     peft_type="P_TUNING",
     task_type="SEQ_2_SEQ_LM",
