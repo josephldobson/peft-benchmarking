@@ -1,123 +1,67 @@
-from transformers import (
-    T5Tokenizer,
-    T5ForConditionalGeneration,
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    DataCollatorWithPadding,
-    TrainingArguments,
-    Trainer,
-)
-from peft import (
-    PromptEncoder,
-    PromptEncoderConfig,
-    get_peft_config,
-    get_peft_model,
-    get_peft_model_state_dict,
-    set_peft_model_state_dict,
-    PeftType,
-    PromptEncoderConfig,
-)
-from datasets import load_dataset, concatenate_datasets
-import random
-import evaluate
-import torch
+from prefix_tuning import prepare_datasets
+from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer
+from transformers import DataCollatorForSeq2Seq, DataCollatorWithPadding
+from datasets import load_dataset, DatasetDict, load_from_disk
+from peft import PromptEncoder, PromptEncoderConfig, get_peft_model
+import pandas as pd
+import string
 
+OUTPUT_DIR = "models/flan_10k_t5small_p-tuning"
 MODEL_NAME = "t5-small"
-LOADED_DATASET = "cais/mmlu"
-DATASET_CONFIG = "abstract_algebra"
-OUTPUT_DIR = "models/mmlu_lora_testing"
-MAX_LENGTH = 512
-NUM_TRAIN_EXAMPLES = 100
-NUM_TEST_EXAMPLES = 16
-SEED = 42
-TRAIN_EPOCHS = 100
-LEARNING_RATE = 2e-5
-WEIGHT_DECAY = 0.01
-BATCH_SIZE = 8
-LOGGING_STEPS = 10
-SAVE_LIMIT = 3
 
-random.seed(SEED)
+dataset = load_dataset("sordonia/flan-10k-flat", split='train[:5%]')
+flan_dict = pd.read_csv("flan_collection_info.csv")
 
-def preprocess_and_tokenize_data_lora(tokenizer, x, question_key, choices_key, answer_key):
-    input_texts = []
-    target_texts = []
+multi_choice_qa_tasks_list = flan_dict.loc[flan_dict["Generic Task Category"] == "Multiple-Choice QA (no trivia knowledge required)"]["Specific Task Category"].drop_duplicates().tolist()
+multi_choice_qa_tasks_set = set(multi_choice_qa_tasks_list)
+mc_qa_dataset = dataset.filter(lambda r: r["task_name"] in multi_choice_qa_tasks_set)
 
-    for question, choices, answer in zip(x[question_key], x[choices_key], x[answer_key]):
-        input_text = f"question: {question} options: {', '.join(choices)}"
-        target_text = choices[answer]
-        input_texts.append(input_text)
-        target_texts.append(target_text)
+tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
+model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
-    tokenized_inputs = tokenizer(input_texts, padding="max_length", truncation=True, max_length=MAX_LENGTH)
-    tokenized_targets = tokenizer(target_texts, padding="max_length", truncation=True, max_length=MAX_LENGTH)
+def tokenize_function(examples):
+    model_inputs = tokenizer(examples["source"], truncation=True, max_length=tokenizer.model_max_length)
+    with tokenizer.as_target_tokenizer():
+        model_inputs["target"] = tokenizer.as_target_tokenizer(examples["target"], max_length=tokenizer.model_max_length)
+    return model_inputs
 
-    return {
-        "input_ids": tokenized_inputs["input_ids"],
-        "attention_mask": tokenized_inputs["attention_mask"],
-        "labels": tokenized_targets["input_ids"],
-    }
+tokenized_datasets = mc_qa_dataset.map(
+    tokenize_function,
+    batched=True,
+    remove_columns=["source", "task_name", "task_source", "template_type", "template_idx", "split"],
+)
 
+tokenized_datasets = tokenized_datasets.rename_column("target", "labels")
 
-def prepare_datasets(num_train, num_test):
-    original_dataset = load_dataset(LOADED_DATASET, DATASET_CONFIG)
-    merged_dataset = concatenate_datasets([original_dataset['test'], original_dataset['validation'], original_dataset['dev']])
-    merged_dataset = merged_dataset.shuffle(seed=SEED)
-    train_dataset = merged_dataset.select(range(num_train))
-    test_dataset = merged_dataset.select(range(num_train, num_train + num_test))
-    return train_dataset, test_dataset
+config = PromptEncoderConfig(
+    peft_type="P_TUNING",
+    task_type="SEQ_2_SEQ_LM",
+    num_virtual_tokens=20,
+    encoder_hidden_size=128,
+)
 
+model = get_peft_model(model, config)
 
-def main():
-    tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
-    model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
+training_args = TrainingArguments(
+    output_dir=OUTPUT_DIR,
+    evaluation_strategy="epoch",
+    learning_rate=2e-3,
+    per_device_train_batch_size=4,
+    per_device_eval_batch_size=4,
+    num_train_epochs=1,
+    weight_decay=0.01,
+    save_total_limit=3,
+)
 
-    config = PromptEncoderConfig(
-        peft_type="P_TUNING",
-        task_type="SEQ_2_SEQ_LM",
-        num_virtual_tokens=20,
-        token_dim=768,
-        num_transformer_submodules=1,
-        num_attention_heads=12,
-        num_layers=12,
-        encoder_reparameterization_type="MLP",
-        encoder_hidden_size=768,
-    )
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_datasets,
+    tokenizer=tokenizer,
+)
 
-    prompt_encoder = PromptEncoder(config)
+model.config.use_cache = False
+trainer.train()
 
-    training_args = TrainingArguments(
-        output_dir="output",
-        num_train_epochs=TRAIN_EPOCHS,
-        per_device_train_batch_size=BATCH_SIZE,
-        per_device_eval_batch_size=BATCH_SIZE,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        learning_rate=LEARNING_RATE,
-        weight_decay=WEIGHT_DECAY,
-        logging_steps=LOGGING_STEPS,
-        save_total_limit=SAVE_LIMIT,
-        push_to_hub=False,
-        # fp16=True, # Enable for FP16 training if supported by hardware
-    )
-
-    train_dataset, test_dataset = prepare_datasets(NUM_TRAIN_EXAMPLES, NUM_TEST_EXAMPLES)
-
-    tokenized_train_dataset = train_dataset.map(lambda x: preprocess_and_tokenize_data_lora(tokenizer, x, 'question', 'choices', 'answer'), batched=True)
-    tokenized_test_dataset = test_dataset.map(lambda x: preprocess_and_tokenize_data_lora(tokenizer, x, 'question', 'choices', 'answer'), batched=True)
-
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=tokenized_train_dataset,
-        eval_dataset=tokenized_test_dataset,
-    )
-
-    model.config.use_cache = False
-    trainer.train()
-
-    trainer.model.save_pretrained(OUTPUT_DIR)
-    tokenizer.save_pretrained(OUTPUT_DIR)
-
-if __name__ == "__main__":
-    main()
+trainer.model.save_pretrained(OUTPUT_DIR)
+tokenizer.save_pretrained(OUTPUT_DIR)
