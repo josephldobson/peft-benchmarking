@@ -24,7 +24,7 @@ def tokenize_function(tokenizer, x):
     return {
         "input_ids": tokenized_inputs["input_ids"],
         "attention_mask": tokenized_inputs["attention_mask"],
-        "labels": tokenized_targets["input_ids"],
+        "labels": tokenized_targets["input_ids"],git t
     }
 
 tokenized_trainsets = mc_qa_trainset["train"].map(
@@ -50,11 +50,11 @@ training_args = TrainingArguments(
     output_dir=OUTPUT_DIR,
     evaluation_strategy="epoch",
     learning_rate=2e-3,
-    per_device_train_batch_size=4,
-    per_device_eval_batch_size=4,
-    num_train_epochs=1,
+    per_device_train_batch_size=32,
+    per_device_eval_batch_size=32,
+    num_train_epochs=4,
     weight_decay=0.01,
-    save_total_limit=3,
+    save_total_limit=1,
 )
 
 trainer = Trainer(
