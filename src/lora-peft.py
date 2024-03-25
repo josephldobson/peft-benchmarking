@@ -28,9 +28,6 @@ mc_qa_dataset = dataset.filter(lambda r: r["task_name"] in multi_choice_qa_tasks
 mc_qa_trainset = mc_qa_dataset.filter(lambda r: r["split"] == "train")
 mc_qa_testset = mc_qa_dataset.filter(lambda r: r["split"] == "test")
 
-print(mc_qa_trainset)
-print(mc_qa_testset)
-
 tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
 model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
