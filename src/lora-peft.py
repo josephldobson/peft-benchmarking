@@ -2,6 +2,7 @@ from datasets import load_dataset, concatenate_datasets
 from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer
 from peft import get_peft_model, LoraConfig, TaskType
 import random
+import pandas as pd
 
 MODEL_NAME = "t5-small"
 LOADED_DATASET = "cais/mmlu"
@@ -18,13 +19,26 @@ BATCH_SIZE = 8
 LOGGING_STEPS = 10
 SAVE_LIMIT = 3
 
-random.seed(SEED)
+dataset = load_dataset("sordonia/flan-10k-flat")
+flan_dict = pd.read_csv("flan_collection_info.csv")
 
-def preprocess_and_tokenize_data_lora(tokenizer, x, question_key, choices_key, answer_key):
+multi_choice_qa_tasks_list = flan_dict.loc[flan_dict["Generic Task Category"] == "Multiple-Choice QA (no trivia knowledge required)"]["Specific Task Category"].drop_duplicates().tolist()
+multi_choice_qa_tasks_set = set(multi_choice_qa_tasks_list)
+mc_qa_dataset = dataset.filter(lambda r: r["task_name"] in multi_choice_qa_tasks_set, num_proc=10)
+mc_qa_trainset = mc_qa_dataset.filter(lambda r: r["split"] == "train")
+mc_qa_testset = mc_qa_dataset.filter(lambda r: r["split"] == "test")
+
+print(mc_qa_trainset)
+print(mc_qa_testset)
+
+tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
+model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
+
+def tokenize_function(tokenizer, x):
     input_texts = []
     target_texts = []
 
-    for question, choices, answer in zip(x[question_key], x[choices_key], x[answer_key]):
+    for question, choices, answer in zip(x["question"], x["choices"], x["answer"]):
         input_text = f"question: {question} options: {', '.join(choices)}"
         target_text = choices[answer]
         input_texts.append(input_text)
@@ -39,61 +53,44 @@ def preprocess_and_tokenize_data_lora(tokenizer, x, question_key, choices_key, a
         "labels": tokenized_targets["input_ids"],
     }
 
+tokenized_trainsets = mc_qa_trainset.map(
+    lambda x: tokenize_function(tokenizer, x),
+    batched=True
+)
 
-def prepare_datasets(num_train, num_test):
-    original_dataset = load_dataset(LOADED_DATASET, DATASET_CONFIG)
-    merged_dataset = concatenate_datasets([original_dataset['test'], original_dataset['validation'], original_dataset['dev']])
-    merged_dataset = merged_dataset.shuffle(seed=SEED)
-    train_dataset = merged_dataset.select(range(num_train))
-    test_dataset = merged_dataset.select(range(num_train, num_train + num_test))
-    return train_dataset, test_dataset
+tokenized_testsets = mc_qa_testset.map(
+    lambda x: tokenize_function(tokenizer, x),
+    batched=True
+)
 
+lora_config = LoraConfig(
+    r=4,
+    lora_alpha=32,
+    lora_dropout=0.01,
+    task_type=TaskType.SEQ_2_SEQ_LM
+)
 
-def main():
-    tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
-    model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
+model = get_peft_model(model, lora_config)
 
-    lora_config = LoraConfig(
-        r=4,
-        lora_alpha=32,
-        lora_dropout=0.01,
-        task_type=TaskType.SEQ_2_SEQ_LM,
-    )
+training_args = TrainingArguments(
+    output_dir=OUTPUT_DIR,
+    evaluation_strategy="epoch",
+    learning_rate=2e-3,
+    per_device_train_batch_size=BATCH_SIZE,
+    per_device_eval_batch_size=BATCH_SIZE,
+    num_train_epochs=1,
+    weight_decay=0.01,
+    save_total_limit=3,
+)
 
-    model = get_peft_model(model, lora_config)
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_trainsets,
+    # eval_dataset=tokenized_testsets,
+    tokenizer=tokenizer,
+)
 
-    training_args = TrainingArguments(
-        output_dir="output",
-        num_train_epochs=TRAIN_EPOCHS,
-        per_device_train_batch_size=BATCH_SIZE,
-        per_device_eval_batch_size=BATCH_SIZE,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        learning_rate=LEARNING_RATE,
-        weight_decay=WEIGHT_DECAY,
-        logging_steps=LOGGING_STEPS,
-        save_total_limit=SAVE_LIMIT,
-        push_to_hub=False,
-        # fp16=True, # Enable for FP16 training if supported by hardware
-    )
-
-    train_dataset, test_dataset = prepare_datasets(NUM_TRAIN_EXAMPLES, NUM_TEST_EXAMPLES)
-
-    tokenized_train_dataset = train_dataset.map(lambda x: preprocess_and_tokenize_data_lora(tokenizer, x, 'question', 'choices', 'answer'), batched=True)
-    tokenized_test_dataset = test_dataset.map(lambda x: preprocess_and_tokenize_data_lora(tokenizer, x, 'question', 'choices', 'answer'), batched=True)
-
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=tokenized_train_dataset,
-        eval_dataset=tokenized_test_dataset,
-    )
-
-    model.config.use_cache = False
-    trainer.train()
-
-    trainer.model.save_pretrained(OUTPUT_DIR)
-    tokenizer.save_pretrained(OUTPUT_DIR)
-
-if __name__ == "__main__":
-    main()
+model.config.use_cache = False
+trainer.train()
+trainer.model.save_pretrained(OUTPUT_DIR)
