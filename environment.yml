@@ -1,16 +1,12 @@
 name: nlp
 channels:
   - defaults
+  - pip
 dependencies:
   - python=3.11.4
   - numpy
   - pytorch
-  - conda-forge::tensorboard
-  - conda-forge::bitsandbytes
-  - conda-forge::transformers
-  - conda-forge::accelerate
-  - conda-forge::datasets
-  - conda-forge::evaluate
-  - conda-forge::peft
-  - conda-forge::sentencepiece
-  
+  - transformers
+  - pandas
+  - peft
+  - datasets
