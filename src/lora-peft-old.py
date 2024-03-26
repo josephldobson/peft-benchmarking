@@ -31,24 +31,7 @@ mc_qa_testset = mc_qa_dataset.filter(lambda r: r["split"] == "test")
 tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
 model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
-def tokenize_function(tokenizer, x):
-    input_texts = []
-    target_texts = []
 
-    for question, choices, answer in zip(x["question"], x["choices"], x["answer"]):
-        input_text = f"question: {question} options: {', '.join(choices)}"
-        target_text = choices[answer]
-        input_texts.append(input_text)
-        target_texts.append(target_text)
-
-    tokenized_inputs = tokenizer(input_texts, padding="max_length", truncation=True, max_length=MAX_LENGTH)
-    tokenized_targets = tokenizer(target_texts, padding="max_length", truncation=True, max_length=MAX_LENGTH)
-
-    return {
-        "input_ids": tokenized_inputs["input_ids"],
-        "attention_mask": tokenized_inputs["attention_mask"],
-        "labels": tokenized_targets["input_ids"],
-    }
 
 tokenized_trainsets = mc_qa_trainset.map(
     lambda x: tokenize_function(tokenizer, x),
