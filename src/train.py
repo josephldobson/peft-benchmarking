@@ -1,23 +1,18 @@
 from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer
 from datasets import load_dataset, DatasetDict, load_from_disk
 from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig
-from utils import tokenize_function, get_peft_model, prepare_flan_datasets
+from utils import tokenize_function, get_peft_configuration, prepare_flan_datasets
 import pandas as pd
 import os
 
-def task():
+def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
-    PEFT_METHOD = "PROMPT_TUNING"
-    MODEL_NAME = "t5-small"
-    BATCH_SIZE = 32
-    NUM_EPOCHS = 4
-
-    OUTPUT_DIR = MODEL_NAME + PEFT_METHOD
+    OUTPUT_DIR = "models/" + MODEL_NAME + PEFT_METHOD
 
     tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
     model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
-    peft_model = get_peft_model(PEFT_METHOD, model)
+    peft_model = get_peft_configuration(PEFT_METHOD, model)
     tokenized_trainsets, tokenized_testsets = prepare_flan_datasets(model, tokenizer)
 
     training_args = TrainingArguments(
@@ -42,4 +37,9 @@ def task():
 
 
 if __name__ == '__main__':
-    task()
+    PEFT_METHOD = "PREFIX_TUNING"
+    MODEL_NAME = "t5-small"
+    BATCH_SIZE = 32
+    NUM_EPOCHS = 4
+
+    train_and_save(PEFT_METHOD, MODEL_NAME, BATCH_SIZE, NUM_EPOCHS)

@@ -8,38 +8,41 @@ import pandas as pd
 def tokenize_function(tokenizer, model, x):
     tokenized_inputs = tokenizer(x['source'], padding="max_length", truncation=True, max_length=model.config.max_length)
     tokenized_targets = tokenizer(x['target'], padding="max_length", truncation=True, max_length=model.config.max_length)
-    out = {
+    return {
         "input_ids": tokenized_inputs["input_ids"],
         "attention_mask": tokenized_inputs["attention_mask"],
         "labels": tokenized_targets["input_ids"],
     }
-    return out
 
 
-def get_peft_model(PEFT_METHOD, model):
+def get_peft_configuration(PEFT_METHOD, model):
     if PEFT_METHOD == "LORA":
         config = LoraConfig(
             task_type="SEQ_2_SEQ_LM",
         )
+        print("LORA")
 
-    if PEFT_METHOD == "PROMPT_TUNING":
+    elif PEFT_METHOD == "PROMPT_TUNING":
         config = PromptTuningConfig(
             task_type="SEQ_2_SEQ_LM",
             num_virtual_tokens=20
         )
+        print("PROMPT_TUNING")
 
-    if PEFT_METHOD == "PREFIX_TUNING":
+    elif PEFT_METHOD == "PREFIX_TUNING":
         config = PrefixTuningConfig(
-            peft_type=PEFT_METHOD,
+            # peft_type=PEFT_METHOD,
             task_type="SEQ_2_SEQ_LM",
             num_virtual_tokens=20
         )
+        print("PREFIX_TUNING")
 
-    if PEFT_METHOD == "P_TUNING":
+    elif PEFT_METHOD == "P_TUNING":
         config = PromptEncoderConfig(
             peft_type="P_TUNING",
             task_type="SEQ_2_SEQ_LM",
         )
+        print("P_TUNING")
 
     else:
         print("Invalid PEFT method")
@@ -50,13 +53,13 @@ def get_peft_model(PEFT_METHOD, model):
 
 def prepare_flan_datasets(model, tokenizer):
     NUM_PROCS = os.cpu_count() - 1
-    if os.path.exists("data/tokenized_datasets"):
-        tokenized_datasets = datasets.load_from_disk("data/tokenized_datasets")
+    if os.path.exists("data/tokenized_testsets"):
         tokenized_trainsets = datasets.load_from_disk("data/tokenized_trainsets")
-        return tokenized_datasets, tokenized_trainsets
+        tokenized_testsets = datasets.load_from_disk("data/tokenized_testsets")
+        return tokenized_trainsets, tokenized_testsets
 
     else:
-        dataset = datasets.load_dataset("sordonia/flan-10k-flat", split="train[:1%]+train[-1%:]")
+        dataset = datasets.load_dataset("sordonia/flan-10k-flat", split="train[:2%]+train[-2%:]")
         flan_dict = pd.read_csv("data/flan_collection_info.csv")
 
         multi_choice_qa_tasks_list = flan_dict.loc[flan_dict["Generic Task Category"] == "Multiple-Choice QA (no trivia knowledge required)"]["Specific Task Category"].drop_duplicates().tolist()
