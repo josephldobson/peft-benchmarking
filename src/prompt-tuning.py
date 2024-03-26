@@ -3,7 +3,7 @@ from datasets import load_dataset, DatasetDict, load_from_disk
 from peft import PromptEncoder, PromptEncoderConfig, get_peft_model
 import pandas as pd
 
-OUTPUT_DIR = "models/flan_10k_t5small_p-tuning"
+OUTPUT_DIR = "models/flan_10k_t5small_prompt-tuning"
 MODEL_NAME = "t5-small"
 
 dataset = load_dataset("sordonia/flan-10k-flat")
@@ -36,3 +36,35 @@ tokenized_testsets = mc_qa_testset["train"].map(
     lambda x: tokenize_function(tokenizer, x),
     batched=True
 )
+
+config = PromptEncoderConfig(
+    peft_type="PROMPT_TUNING",
+    task_type="SEQ_2_SEQ_LM",
+    num_virtual_tokens=20,
+    token_dim=512
+)
+
+model = get_peft_model(model, config)
+
+training_args = TrainingArguments(
+    output_dir=OUTPUT_DIR,
+    evaluation_strategy="epoch",
+    learning_rate=2e-3,
+    per_device_train_batch_size=32,
+    per_device_eval_batch_size=32,
+    num_train_epochs=4,
+    weight_decay=0.01,
+    save_total_limit=1,
+)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_trainsets,
+    eval_dataset=tokenized_testsets,
+    tokenizer=tokenizer,
+)
+
+model.config.use_cache = False
+trainer.train()
+trainer.model.save_pretrained(OUTPUT_DIR)
