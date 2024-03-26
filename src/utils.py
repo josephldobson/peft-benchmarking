@@ -1,5 +1,5 @@
 import os
-from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer
+from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, logging
 import datasets
 from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig
 import pandas as pd
@@ -20,35 +20,34 @@ def get_peft_configuration(PEFT_METHOD, model):
         config = LoraConfig(
             task_type="SEQ_2_SEQ_LM",
         )
-        print("LORA")
 
     elif PEFT_METHOD == "PROMPT_TUNING":
         config = PromptTuningConfig(
+            peft_type=PEFT_METHOD,
             task_type="SEQ_2_SEQ_LM",
-            num_virtual_tokens=20
+            num_virtual_tokens=20,
         )
-        print("PROMPT_TUNING")
 
     elif PEFT_METHOD == "PREFIX_TUNING":
         config = PrefixTuningConfig(
-            # peft_type=PEFT_METHOD,
+            peft_type=PEFT_METHOD,
             task_type="SEQ_2_SEQ_LM",
-            num_virtual_tokens=20
+            num_virtual_tokens=20,
         )
-        print("PREFIX_TUNING")
 
     elif PEFT_METHOD == "P_TUNING":
         config = PromptEncoderConfig(
             peft_type="P_TUNING",
             task_type="SEQ_2_SEQ_LM",
+            num_virtual_tokens=20,
+            encoder_hidden_size=128
         )
-        print("P_TUNING")
 
     else:
         print("Invalid PEFT method")
         return None
 
-    return get_peft_model(model, config)
+    return config
 
 
 def prepare_flan_datasets(model, tokenizer):
