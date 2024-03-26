@@ -1,13 +1,13 @@
 from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer
 from datasets import load_dataset, DatasetDict, load_from_disk
-from peft import PromptEncoder, PromptEncoderConfig, get_peft_model
+from peft import PeftModel, PeftConfig, get_peft_model, PrefixTuningConfig, TaskType
 import pandas as pd
 
 
 def task():
 
-    PEFT_METHOD = "P_TUNING"
-    OUTPUT_DIR = "models/t5small_p-tuning"
+    PEFT_METHOD = "LORA"
+    OUTPUT_DIR = "models/t5small_lora"
     MODEL_NAME = "t5-small"
     BATCH_SIZE = 32
     NUM_EPOCHS = 4
@@ -27,10 +27,11 @@ def task():
     def tokenize_function(tokenizer, x):
         tokenized_inputs = tokenizer(x['source'], padding="max_length", truncation=True, max_length=model.config.max_length)
         tokenized_targets = tokenizer(x['target'], padding="max_length", truncation=True, max_length=model.config.max_length)
+
         return {
             "input_ids": tokenized_inputs["input_ids"],
             "attention_mask": tokenized_inputs["attention_mask"],
-            "labels": tokenized_targets["input_ids"]
+            "labels": tokenized_targets["input_ids"],
         }
 
     tokenized_trainsets = mc_qa_trainset.map(
@@ -43,11 +44,15 @@ def task():
         batched=True
     )
 
-    config = PromptEncoderConfig(
-        peft_type="P_TUNING",
+    config = PrefixTuningConfig(
+        peft_type=PEFT_METHOD,
         task_type="SEQ_2_SEQ_LM",
         num_virtual_tokens=20,
-        encoder_hidden_size=128
+        token_dim=768,
+        num_transformer_submodules=1,
+        num_attention_heads=12,
+        num_layers=12,
+        encoder_hidden_size=768,
     )
 
     model = get_peft_model(model, config)
@@ -60,7 +65,7 @@ def task():
         per_device_eval_batch_size=BATCH_SIZE,
         num_train_epochs=NUM_EPOCHS,
         weight_decay=0.01,
-        save_total_limit=1,
+        save_total_limit=3,
     )
 
     trainer = Trainer(
@@ -71,9 +76,9 @@ def task():
         tokenizer=tokenizer,
     )
 
-    model.config.use_cache = False
     trainer.train()
     trainer.model.save_pretrained(OUTPUT_DIR)
+
 
 if __name__ == '__main__':
     task()
