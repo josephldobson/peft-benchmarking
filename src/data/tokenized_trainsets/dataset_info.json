@@ -1,0 +1,251 @@
+{
+  "builder_name": "parquet",
+  "citation": "",
+  "config_name": "default",
+  "dataset_name": "flan-10k-flat",
+  "dataset_size": 16817349001,
+  "description": "",
+  "download_checksums": {
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00000-of-00034-549f41aebcd042d0.parquet": {
+      "num_bytes": 213499739,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00001-of-00034-ecbd51dc093e0462.parquet": {
+      "num_bytes": 192902284,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00002-of-00034-61373b8f249fd1c8.parquet": {
+      "num_bytes": 172023956,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00003-of-00034-3fd9ac007d3a9638.parquet": {
+      "num_bytes": 165461786,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00004-of-00034-266e9c797c5295b1.parquet": {
+      "num_bytes": 145714119,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00005-of-00034-da473d7f0d284f83.parquet": {
+      "num_bytes": 240237838,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00006-of-00034-bad805774460b44c.parquet": {
+      "num_bytes": 164533503,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00007-of-00034-535a5e13d5286baa.parquet": {
+      "num_bytes": 278983709,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00008-of-00034-fe681ff3cbd61f24.parquet": {
+      "num_bytes": 235019708,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00009-of-00034-63b2debb008c11bc.parquet": {
+      "num_bytes": 115864440,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00010-of-00034-e54384164e17ce1b.parquet": {
+      "num_bytes": 113419669,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00011-of-00034-4894308bd3192a23.parquet": {
+      "num_bytes": 342151516,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00012-of-00034-fe9c4c5836e10389.parquet": {
+      "num_bytes": 187502954,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00013-of-00034-15a81aeef3e261dc.parquet": {
+      "num_bytes": 253667214,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00014-of-00034-dd3ba3706b6710e7.parquet": {
+      "num_bytes": 220602303,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00015-of-00034-eddedbe6116d1015.parquet": {
+      "num_bytes": 152909993,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00016-of-00034-f6c9f928ce25fe71.parquet": {
+      "num_bytes": 178675525,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00017-of-00034-a414ffa776143278.parquet": {
+      "num_bytes": 219158277,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00018-of-00034-68dda029801bf91a.parquet": {
+      "num_bytes": 129880081,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00019-of-00034-b4e296b8bdd3a413.parquet": {
+      "num_bytes": 177971619,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00020-of-00034-40e526d1544f786e.parquet": {
+      "num_bytes": 186866641,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00021-of-00034-d53e73215714953a.parquet": {
+      "num_bytes": 214298688,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00022-of-00034-9336a1bde4dcc0e3.parquet": {
+      "num_bytes": 193492551,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00023-of-00034-58b7aa5a2f8c29a3.parquet": {
+      "num_bytes": 299232426,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00024-of-00034-0d97a9f5c9d20ca8.parquet": {
+      "num_bytes": 270452485,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00025-of-00034-5324cab70d6714d2.parquet": {
+      "num_bytes": 305668759,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00026-of-00034-3d9d1e7b75891d15.parquet": {
+      "num_bytes": 198997054,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00027-of-00034-c5e89d734adc9afd.parquet": {
+      "num_bytes": 222047437,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00028-of-00034-958b212fddbef192.parquet": {
+      "num_bytes": 222198582,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00029-of-00034-287c1357f9b768fd.parquet": {
+      "num_bytes": 216256271,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00030-of-00034-9fb16c4b875c3eb1.parquet": {
+      "num_bytes": 160675756,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00031-of-00034-d2fe290f966b757b.parquet": {
+      "num_bytes": 161916005,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00032-of-00034-e30cdf4cd637f0a2.parquet": {
+      "num_bytes": 170284852,
+      "checksum": null
+    },
+    "hf://datasets/sordonia/flan-10k-flat@b705fa3a8752f0e887746a2583e827ee01fb06d4/data/train-00033-of-00034-8ff918356f11bd79.parquet": {
+      "num_bytes": 256388797,
+      "checksum": null
+    }
+  },
+  "download_size": 6978956537,
+  "features": {
+    "source": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "target": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "task_name": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "task_source": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "template_type": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "template_idx": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "split": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "input_ids": {
+      "feature": {
+        "dtype": "int32",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "attention_mask": {
+      "feature": {
+        "dtype": "int8",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "labels": {
+      "feature": {
+        "dtype": "int64",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 23796305538,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 16817349001,
+      "num_examples": 10912677,
+      "shard_lengths": [
+        326962,
+        377962,
+        353962,
+        357961,
+        366961,
+        321961,
+        319961,
+        198961,
+        330961,
+        478961,
+        230961,
+        359961,
+        316961,
+        315961,
+        296961,
+        402961,
+        336961,
+        393961,
+        358922,
+        334961,
+        318961,
+        327961,
+        227000,
+        277961,
+        270961,
+        272961,
+        311961,
+        321961,
+        262961,
+        340961,
+        396961,
+        341961,
+        331961,
+        124961
+      ],
+      "dataset_name": "flan-10k-flat"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "auto_mapping": null,
+  "base_model_name_or_path": "t5-small",
+  "encoder_hidden_size": 512,
+  "inference_mode": true,
+  "num_attention_heads": 8,
+  "num_layers": 6,
+  "num_transformer_submodules": 2,
+  "num_virtual_tokens": 20,
+  "peft_type": "PREFIX_TUNING",
+  "prefix_projection": false,
+  "revision": null,
+  "task_type": "SEQ_2_SEQ_LM",
+  "token_dim": 512
+}
