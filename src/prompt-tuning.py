@@ -1,13 +1,13 @@
 from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer
 from datasets import load_dataset, DatasetDict, load_from_disk
-from peft import PeftModel, PeftConfig, get_peft_model, LoraConfig, TaskType
+from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType
 import pandas as pd
 import os
 
 
 def task():
     NUM_PROCS = os.cpu_count() - 1
-    PEFT_METHOD = "LORA"
+    PEFT_METHOD = "PROMPT_TUNING"
     OUTPUT_DIR = "models/t5small_lora"
     MODEL_NAME = "t5-small"
     BATCH_SIZE = 32
@@ -45,11 +45,12 @@ def task():
         batched=True
     )
 
-    lora_config = LoraConfig(
-        task_type = TaskType.SEQ_2_SEQ_LM,
+    config = PromptTuningConfig(
+        peft_type=PEFT_METHOD,
+        task_type="SEQ_2_SEQ_LM",
     )
 
-    model = get_peft_model(model, lora_config)
+    model = get_peft_model(model, config)
 
     training_args = TrainingArguments(
         output_dir=OUTPUT_DIR,
@@ -57,7 +58,7 @@ def task():
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
         num_train_epochs=NUM_EPOCHS,
-        save_total_limit=3,
+        save_total_limit=1,
     )
 
     trainer = Trainer(

@@ -5,9 +5,9 @@ import pandas as pd
 
 
 def task():
-
+    NUM_PROCS = os.cpu_count() - 1
     PEFT_METHOD = "LORA"
-    OUTPUT_DIR = "models/t5small_lora"
+    OUTPUT_DIR = "models/t5small_prefix-tuning"
     MODEL_NAME = "t5-small"
     BATCH_SIZE = 32
     NUM_EPOCHS = 4
@@ -17,7 +17,7 @@ def task():
 
     multi_choice_qa_tasks_list = flan_dict.loc[flan_dict["Generic Task Category"] == "Multiple-Choice QA (no trivia knowledge required)"]["Specific Task Category"].drop_duplicates().tolist()
     multi_choice_qa_tasks_set = set(multi_choice_qa_tasks_list)
-    mc_qa_dataset = dataset.filter(lambda r: r["task_name"] in multi_choice_qa_tasks_set, num_proc=10)
+    mc_qa_dataset = dataset.filter(lambda r: r["task_name"] in multi_choice_qa_tasks_set, num_proc=NUM_PROCS)
     mc_qa_trainset = mc_qa_dataset.filter(lambda r: r["split"] == "train")
     mc_qa_testset = mc_qa_dataset.filter(lambda r: r["split"] == "test")
 
@@ -60,12 +60,10 @@ def task():
     training_args = TrainingArguments(
         output_dir=OUTPUT_DIR,
         evaluation_strategy="epoch",
-        learning_rate=2e-3,
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
         num_train_epochs=NUM_EPOCHS,
-        weight_decay=0.01,
-        save_total_limit=3,
+        save_total_limit=1,
     )
 
     trainer = Trainer(
@@ -75,7 +73,7 @@ def task():
         eval_dataset=tokenized_testsets,
         tokenizer=tokenizer,
     )
-
+    model.config.use_cache = False
     trainer.train()
     trainer.model.save_pretrained(OUTPUT_DIR)
 

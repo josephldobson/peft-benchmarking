@@ -5,7 +5,7 @@ import pandas as pd
 
 
 def task():
-
+    NUM_PROCS = os.cpu_count() - 1
     PEFT_METHOD = "P_TUNING"
     OUTPUT_DIR = "models/t5small_p-tuning"
     MODEL_NAME = "t5-small"
@@ -17,7 +17,7 @@ def task():
 
     multi_choice_qa_tasks_list = flan_dict.loc[flan_dict["Generic Task Category"] == "Multiple-Choice QA (no trivia knowledge required)"]["Specific Task Category"].drop_duplicates().tolist()
     multi_choice_qa_tasks_set = set(multi_choice_qa_tasks_list)
-    mc_qa_dataset = dataset.filter(lambda r: r["task_name"] in multi_choice_qa_tasks_set, num_proc=10)
+    mc_qa_dataset = dataset.filter(lambda r: r["task_name"] in multi_choice_qa_tasks_set, num_proc=NUM_PROCS)
     mc_qa_trainset = mc_qa_dataset.filter(lambda r: r["split"] == "train")
     mc_qa_testset = mc_qa_dataset.filter(lambda r: r["split"] == "test")
 
@@ -46,8 +46,8 @@ def task():
     config = PromptEncoderConfig(
         peft_type="P_TUNING",
         task_type="SEQ_2_SEQ_LM",
-        num_virtual_tokens=20,
-        encoder_hidden_size=128
+        # num_virtual_tokens=20,
+        # encoder_hidden_size=128
     )
 
     model = get_peft_model(model, config)
