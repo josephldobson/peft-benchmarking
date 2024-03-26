@@ -1,9 +1,8 @@
 import os
 from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, logging
 import datasets
-from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig
+from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig, IA3Config
 import pandas as pd
-
 
 def tokenize_function(tokenizer, model, x):
     tokenized_inputs = tokenizer(x['source'], padding="max_length", truncation=True, max_length=model.config.max_length)
@@ -42,6 +41,10 @@ def get_peft_configuration(PEFT_METHOD, model):
             num_virtual_tokens=20,
             encoder_hidden_size=128
         )
+    elif PEFT_METHOD == "IA3":
+        config = IA3Config(
+            task_type="SEQ_2_SEQ_LM"
+        )
 
     else:
         print("Invalid PEFT method")
@@ -58,7 +61,7 @@ def prepare_flan_datasets(model, tokenizer):
         return tokenized_trainsets, tokenized_testsets
 
     else:
-        dataset = datasets.load_dataset("sordonia/flan-10k-flat", split="train[:2%]+train[-2%:]")
+        dataset = datasets.load_dataset("sordonia/flan-10k-flat", split="train")
         flan_dict = pd.read_csv("data/flan_collection_info.csv")
 
         multi_choice_qa_tasks_list = flan_dict.loc[flan_dict["Generic Task Category"] == "Multiple-Choice QA (no trivia knowledge required)"]["Specific Task Category"].drop_duplicates().tolist()
