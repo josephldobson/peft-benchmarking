@@ -36,35 +36,3 @@ tokenized_testsets = mc_qa_testset["train"].map(
     lambda x: tokenize_function(tokenizer, x),
     batched=True
 )
-
-config = PromptEncoderConfig(
-    peft_type="P_TUNING",
-    task_type="SEQ_2_SEQ_LM",
-    num_virtual_tokens=20,
-    encoder_hidden_size=128
-)
-
-model = get_peft_model(model, config)
-
-training_args = TrainingArguments(
-    output_dir=OUTPUT_DIR,
-    evaluation_strategy="epoch",
-    learning_rate=2e-3,
-    per_device_train_batch_size=32,
-    per_device_eval_batch_size=32,
-    num_train_epochs=4,
-    weight_decay=0.01,
-    save_total_limit=1,
-)
-
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=tokenized_trainsets,
-    eval_dataset=tokenized_testsets,
-    tokenizer=tokenizer,
-)
-
-model.config.use_cache = False
-trainer.train()
-trainer.model.save_pretrained(OUTPUT_DIR)
