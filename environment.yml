@@ -12,4 +12,5 @@ dependencies:
   - conda-forge::datasets
   - conda-forge::evaluate
   - conda-forge::peft
+  - conda-forge::sentencepiece
   

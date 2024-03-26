@@ -19,6 +19,7 @@ def task():
     tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
     model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
 
+<<<<<<< HEAD
     def tokenize_function(tokenizer, x):
         tokenized_inputs = tokenizer(x['source'], padding="max_length", truncation=True, max_length=model.config.max_length)
         tokenized_targets = tokenizer(x['target'], padding="max_length", truncation=True, max_length=model.config.max_length)
@@ -27,6 +28,16 @@ def task():
             "attention_mask": tokenized_inputs["attention_mask"],
             "labels": tokenized_targets["input_ids"]
         }
+=======
+def tokenize_function(tokenizer, x):
+    tokenized_inputs = tokenizer(x['source'], padding="max_length", truncation=True, max_length=model.config.max_length)
+    tokenized_targets = tokenizer(x['target'], padding="max_length", truncation=True, max_length=model.config.max_length)
+    return {
+        "input_ids": tokenized_inputs["input_ids"],
+        "attention_mask": tokenized_inputs["attention_mask"],
+        "labels": tokenized_targets["input_ids"]
+    }
+>>>>>>> 5286e12f79a1e7ebe2e245f0e8705b84f567f0af
 
     tokenized_trainsets = mc_qa_trainset["train"].map(
         lambda x: tokenize_function(tokenizer, x),
