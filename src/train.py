@@ -43,12 +43,13 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
     trainer.train()
     trainer.model.save_pretrained(output_dir)
+    tokenizer.save_pretrained(output_dir)
 
 
 if __name__ == '__main__':
     for PEFT_METHOD in ["LORA", "PROMPT_TUNING", "PREFIX_TUNING", "P_TUNING", "IA3"]:
         MODEL_NAME = "t5-small"
-        BATCH_SIZE = 64
+        BATCH_SIZE = 128
         NUM_EPOCHS = 4
 
         train_and_save(PEFT_METHOD, MODEL_NAME, BATCH_SIZE, NUM_EPOCHS)
