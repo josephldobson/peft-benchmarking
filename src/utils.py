@@ -4,6 +4,7 @@ import datasets
 from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig, IA3Config
 import pandas as pd
 
+
 def tokenize_function(tokenizer, model, x):
     tokenized_inputs = tokenizer(x['source'], padding="max_length", truncation=True, max_length=model.config.max_length)
     tokenized_targets = tokenizer(x['target'], padding="max_length", truncation=True, max_length=model.config.max_length)
@@ -41,6 +42,7 @@ def get_peft_configuration(PEFT_METHOD, model):
             num_virtual_tokens=20,
             encoder_hidden_size=128
         )
+
     elif PEFT_METHOD == "IA3":
         config = IA3Config(
             task_type="SEQ_2_SEQ_LM"
