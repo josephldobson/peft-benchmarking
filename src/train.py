@@ -8,12 +8,12 @@ import os
 
 def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
-    output_dir = "models/" + MODEL_NAME + "_" + PEFT_METHOD
+    output_dir = "models/" + model_name + "_" + peft_method
 
-    tokenizer = T5Tokenizer.from_pretrained(MODEL_NAME)
-    model = T5ForConditionalGeneration.from_pretrained(MODEL_NAME)
+    tokenizer = T5Tokenizer.from_pretrained(model_name)
+    model = T5ForConditionalGeneration.from_pretrained(model_name)
 
-    config = get_peft_configuration(PEFT_METHOD, model)
+    config = get_peft_configuration(peft_method, model)
 
     if hasattr(model, "enable_input_require_grads"):
             model.enable_input_require_grads()
@@ -27,9 +27,9 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
     training_args = TrainingArguments(
         output_dir=output_dir,
         evaluation_strategy="epoch",
-        per_device_train_batch_size=BATCH_SIZE,
-        per_device_eval_batch_size=BATCH_SIZE,
-        num_train_epochs=NUM_EPOCHS,
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size,
+        num_train_epochs=num_epochs,
         save_total_limit=1,
     )
 
