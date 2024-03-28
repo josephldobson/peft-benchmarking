@@ -1,4 +1,4 @@
-from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, Seq2SeqTrainer, Seq2SeqTrainingArguments
+from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, Seq2SeqTrainer, Seq2SeqTrainingArguments, AutoModelForSeq2SeqLM, AutoTokenizer
 from datasets import load_dataset, DatasetDict, load_from_disk
 from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig
 from utils import tokenize_function, get_peft_configuration, prepare_flan_datasets
@@ -35,15 +35,15 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
     )
 
     trainer = Seq2SeqTrainer(
-        model=model,
+        model=peft_model,
         args=training_args,
         train_dataset=tokenized_trainsets,
     )
     model.config.use_cache = False
     trainer.train()
-    trainer.eval()
 
-    trainer.model.push_to_hub(output_dir)
+    trainer.model.save_pretrained(output_dir)
+    tokenizer.save_pretrained(output_dir)
 
 
 if __name__ == '__main__':

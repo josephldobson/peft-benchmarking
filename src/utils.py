@@ -18,34 +18,34 @@ def tokenize_function(tokenizer, model, x):
 def get_peft_configuration(PEFT_METHOD, model):
     if PEFT_METHOD == "LORA":
         config = LoraConfig(
-            task_type="SEQ_2_SEQ_LM",
+            task_type=TaskType.SEQ_2_SEQ_LM
         )
 
     elif PEFT_METHOD == "PROMPT_TUNING":
         config = PromptTuningConfig(
             peft_type=PEFT_METHOD,
-            task_type="SEQ_2_SEQ_LM",
+            task_type=TaskType.SEQ_2_SEQ_LM,
             num_virtual_tokens=20,
         )
 
     elif PEFT_METHOD == "PREFIX_TUNING":
         config = PrefixTuningConfig(
             peft_type=PEFT_METHOD,
-            task_type="SEQ_2_SEQ_LM",
+            task_type=TaskType.SEQ_2_SEQ_LM,
             num_virtual_tokens=20,
         )
 
     elif PEFT_METHOD == "P_TUNING":
         config = PromptEncoderConfig(
             peft_type="P_TUNING",
-            task_type="SEQ_2_SEQ_LM",
+            task_type=TaskType.SEQ_2_SEQ_LM,
             num_virtual_tokens=20,
             encoder_hidden_size=128
         )
 
     elif PEFT_METHOD == "IA3":
         config = IA3Config(
-            task_type="SEQ_2_SEQ_LM"
+            task_type=TaskType.SEQ_2_SEQ_LM
         )
 
     else:
@@ -63,7 +63,7 @@ def prepare_flan_datasets(model, tokenizer):
         return tokenized_trainsets, tokenized_testsets
 
     else:
-        dataset = datasets.load_dataset("sordonia/flan-10k-flat", split="train[:0.1%]+train[-0.1%:]") # split = "train" for full dataset
+        dataset = datasets.load_dataset("sordonia/flan-10k-flat", split="train[:1%]+train[-1%:]") # split = "train" for full dataset
         flan_dict = pd.read_csv("data/flan_collection_info.csv")
 
         multi_choice_qa_tasks_list = flan_dict.loc[flan_dict["Generic Task Category"] == "Multiple-Choice QA (no trivia knowledge required)"]["Specific Task Category"].drop_duplicates().tolist()

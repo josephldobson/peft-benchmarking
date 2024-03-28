@@ -24,7 +24,7 @@ def format_mmlu_example(example, incl_answer = False):
 
     return formatted_example
 
-def eval_mmlu(model_path, tokenizer_path, verbose=True):
+def eval_mmlu(model_path, verbose=True):
     """
     Evaluates a model on the MMLU dataset, using 5-shot prompting.
 
@@ -37,20 +37,18 @@ def eval_mmlu(model_path, tokenizer_path, verbose=True):
         subject_acc (dict): dictionary with accuracy by subject, with values ([num_correct,total],accuracy)
     """
     ## load the pretrained model and tokenizer
-    peft_model_id = "results"
-    config = PeftConfig.from_pretrained(peft_model_id)
-    model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path,  load_in_8bit=True,  device_map={"":0})
+    config = PeftConfig.from_pretrained(model_path)
+    model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path)
     tokenizer = AutoTokenizer.from_pretrained(config.base_model_name_or_path)
-    model = PeftModel.from_pretrained(model, peft_model_id, device_map={"":0})
+    model = PeftModel.from_pretrained(model, model_path)
     model.eval()
 
 
-    ## datasets
 
+    ## datasets
     mmlu_dataset = load_dataset("cais/mmlu", 'all', split='test')
 
     ## metrics
-
     subjects = set(mmlu_dataset['subject'])
     subject_acc = {label: [[0, 0],0] for label in subjects}
 
@@ -117,4 +115,4 @@ def eval_mmlu(model_path, tokenizer_path, verbose=True):
     return test_accuracy, subject_acc
 
 if __name__ == '__main__':
-    eval_mmlu('peft-benchmarking/src/models/t5-small_LORA','peft-benchmarking/src/models/t5-small_LORA')
+    eval_mmlu('models/t5-small_LORA')
