@@ -7,3 +7,4 @@ __pycache__/
 src/data/tokenized_trainsets/
 src/data/tokenized_testsets/
 src/models/
+MMLU-eval
