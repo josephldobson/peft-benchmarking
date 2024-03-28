@@ -18,7 +18,7 @@ def format_mmlu_example(example, incl_answer = False):
     
     # Formatting the entire example
     if incl_answer:
-        formatted_example = f"Question: {question}\nOptions:\n{options}\nAnswer: {chr(65+answer)}"
+        formatted_example = f"Question: {question}\nOptions:\n{options}\nAnswer: {chr(65+answer)}."
     else:
         formatted_example = f"Question: {question}\nOptions:\n{options}\nAnswer:"
     
@@ -37,8 +37,8 @@ def eval_mmlu(model_path, tokenizer_path, verbose=True):
         subject_acc (dict): dictionary with accuracy by subject, with values ([num_correct,total],accuracy)
     """
     ## load the pretrained model and tokenizer
-    model = T5ForConditionalGeneration.from_pretrained(model_path)
-    tokenizer = T5Tokenizer.from_pretrained(tokenizer_path)
+    model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-small")
+    tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-small")
     model.eval()
 
     ## datasets
@@ -78,7 +78,7 @@ def eval_mmlu(model_path, tokenizer_path, verbose=True):
             # format inputs
             formatted_example = format_mmlu_example(example, incl_answer=False)
             input_text = '\n\n'.join((five_shot_text, formatted_example))
-            inputs = tokenizer(input_text, return_tensors="pt", padding=True, truncation=True, max_length=model.config.max_length)
+            inputs = tokenizer(input_text, return_tensors="pt")
             input_ids = inputs["input_ids"]
             attention_mask = inputs["attention_mask"]
 
@@ -89,9 +89,7 @@ def eval_mmlu(model_path, tokenizer_path, verbose=True):
             with torch.no_grad():
                 output_ids = model.generate(
                     input_ids,
-                    attention_mask=attention_mask,
-                    max_length=5,  # Restrict to short outputs
-                    early_stopping=True,  # Stop as soon as num_beams sentences are finished per batch
+                    max_length=10
                 )
         
             output_answer = tokenizer.decode(output_ids[0], skip_special_tokens=True)
@@ -115,4 +113,4 @@ def eval_mmlu(model_path, tokenizer_path, verbose=True):
     return test_accuracy, subject_acc
 
 if __name__ == '__main__':
-    eval_mmlu('models/t5-small_LORA','models/t5-small_LORA')
+    eval_mmlu('peft-benchmarking/src/models/t5-small_LORA','peft-benchmarking/src/models/t5-small_LORA')
