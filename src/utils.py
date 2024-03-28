@@ -63,7 +63,7 @@ def prepare_flan_datasets(model, tokenizer):
         return tokenized_trainsets, tokenized_testsets
 
     else:
-        dataset = datasets.load_dataset("sordonia/flan-10k-flat", split="train[:1%]+train[-1%:]") # split = "train" for full dataset
+        dataset = datasets.load_dataset("sordonia/flan-10k-flat", split="train[:0.1%]+train[-0.1%:]") # split = "train" for full dataset
         flan_dict = pd.read_csv("data/flan_collection_info.csv")
 
         multi_choice_qa_tasks_list = flan_dict.loc[flan_dict["Generic Task Category"] == "Multiple-Choice QA (no trivia knowledge required)"]["Specific Task Category"].drop_duplicates().tolist()

@@ -1,6 +1,6 @@
 import torch
 import pandas as pd
-from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, logging, AutoTokenizer
+from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, logging, AutoTokenizer, AutoModelForSeq2SeqLM
 from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig
 from utils import tokenize_function, get_peft_configuration, prepare_flan_datasets
 from datasets import load_dataset, DatasetDict, load_from_disk
@@ -37,16 +37,13 @@ def eval_mmlu(model_path, tokenizer_path, verbose=True):
         subject_acc (dict): dictionary with accuracy by subject, with values ([num_correct,total],accuracy)
     """
     ## load the pretrained model and tokenizer
-    # model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-small")
-    # tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-small")
-    # model.eval()
-
-    config = PeftConfig.from_pretrained(model_path)
-    model = T5ForConditionalGeneration.from_pretrained(config.base_model_name_or_path, return_dict=True, device_map='auto')
+    peft_model_id = "results"
+    config = PeftConfig.from_pretrained(peft_model_id)
+    model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path,  load_in_8bit=True,  device_map={"":0})
     tokenizer = AutoTokenizer.from_pretrained(config.base_model_name_or_path)
+    model = PeftModel.from_pretrained(model, peft_model_id, device_map={"":0})
+    model.eval()
 
-    # Load the Lora model
-    model = PeftModel.from_pretrained(model, model_path)
 
     ## datasets
 
