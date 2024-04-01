@@ -10,3 +10,4 @@ dependencies:
   - pandas
   - peft
   - datasets
+  - nvidia-ml-py3
