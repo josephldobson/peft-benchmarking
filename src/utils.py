@@ -13,7 +13,6 @@ def tokenize_function(tokenizer, model, x):
         "labels": tokenized_targets["input_ids"],
     }
 
-#TODO Confgure the PEFT methods with the right parameters
 def get_peft_configuration(PEFT_METHOD, model):
     if PEFT_METHOD == "LORA":
         config = LoraConfig(
