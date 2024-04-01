@@ -1,4 +1,4 @@
-from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, Seq2SeqTrainer, Seq2SeqTrainingArguments, AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, Seq2SeqTrainer, Seq2SeqTrainingArguments, AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
 from datasets import load_dataset, DatasetDict, load_from_disk
 from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig
 from utils import tokenize_function, get_peft_configuration, prepare_flan_datasets
@@ -24,13 +24,14 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
     peft_model = get_peft_model(model, config)
     tokenized_trainsets, tokenized_testsets = prepare_flan_datasets(model, tokenizer)
 
+    # TODO Viren - get logging set up for the data we need (check the report)
     training_args = Seq2SeqTrainingArguments(
         output_dir=output_dir,
         auto_find_batch_size=True,
         per_device_train_batch_size=batch_size,
         learning_rate=1e-3,
         optim="adamw_torch",
-        num_train_epochs=2,
+        num_train_epochs=num_epochs,
         save_strategy="no",
     )
 
@@ -42,14 +43,17 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
     model.config.use_cache = False
     trainer.train()
 
+    pipe = pipeline(
+        task="question-answering",
+        model=model,
+        tokenizer=tokenizer)
+
     trainer.model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
 
 
 if __name__ == '__main__':
-    for PEFT_METHOD in ["LORA"]:
-
-    # for PEFT_METHOD in ["LORA", "PROMPT_TUNING", "PREFIX_TUNING", "P_TUNING", "IA3"]:
+    for PEFT_METHOD in ["LORA", "PROMPT_TUNING", "PREFIX_TUNING", "P_TUNING", "IA3"]:
         MODEL_NAME = "t5-small"
         BATCH_SIZE = 128
         NUM_EPOCHS = 1

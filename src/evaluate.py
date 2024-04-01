@@ -1,6 +1,6 @@
 import torch
 import pandas as pd
-from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, logging, AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, logging, AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig
 from utils import tokenize_function, get_peft_configuration, prepare_flan_datasets
 from datasets import load_dataset, DatasetDict, load_from_disk
@@ -24,7 +24,7 @@ def format_mmlu_example(example, incl_answer = False):
 
     return formatted_example
 
-def eval_mmlu(model_path, verbose=True):
+def eval_mmlu(model_path):
     """
     Evaluates a model on the MMLU dataset, using 5-shot prompting.
 
@@ -41,9 +41,6 @@ def eval_mmlu(model_path, verbose=True):
     model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path)
     tokenizer = AutoTokenizer.from_pretrained(config.base_model_name_or_path)
     model = PeftModel.from_pretrained(model, model_path)
-    model.eval()
-
-
 
     ## datasets
     mmlu_dataset = load_dataset("cais/mmlu", 'all', split='test')
@@ -60,9 +57,6 @@ def eval_mmlu(model_path, verbose=True):
     total = len(mmlu_dataset) - 5*len(set(mmlu_dataset['subject']))
 
     for subject in subjects:
-
-        if verbose:
-            print(f'\nTesting on {subject}\n')
 
         # FLAN uses 5-shot prompting for MMLU, so we use that here
         subject_set = mmlu_dataset.filter(lambda example: example['subject'] == subject)
@@ -81,22 +75,18 @@ def eval_mmlu(model_path, verbose=True):
             formatted_example = format_mmlu_example(example, incl_answer=False)
             input_text = '\n\n'.join((five_shot_text, formatted_example))
             inputs = tokenizer(input_text, return_tensors="pt")
-            input_ids = inputs["input_ids"]
-            attention_mask = inputs["attention_mask"]
 
+            print(input_ids)
             # Ensure the model is in evaluation mode and torch.no_grad() is used for inference
 
-            ## BROKEN -------------- (doesnt seem to be giving right output)
-            model.eval()  # Make sure the model is in evaluation mode
+            #TODO BROKEN -------------- (doesnt seem to be giving right output)
             with torch.no_grad():
-                output_ids = model.generate(
-                    input_ids,
-                    max_length=10
-                )
+                output_ids = model.generate(inputs)
 
             output_answer = tokenizer.decode(output_ids[0], skip_special_tokens=True)
             first_char = output_answer.strip()[0].upper() if output_answer else ''
             ## -------------------
+
             # Assuming your model outputs the option letter (e.g., "A") as the answer
             predicted_option = ord(first_char) - ord('A')
 
@@ -115,4 +105,4 @@ def eval_mmlu(model_path, verbose=True):
     return test_accuracy, subject_acc
 
 if __name__ == '__main__':
-    eval_mmlu('models/t5-small_LORA')
+    eval_mmlu('models/t5-small_P_TUNING')
