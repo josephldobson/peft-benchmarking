@@ -1,7 +1,7 @@
 import os
 from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, logging
 import datasets
-from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig, IA3Config
+from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig, IA3Config, AdaLoraConfig, LoHaConfig
 import pandas as pd
 
 
@@ -60,6 +60,15 @@ def get_peft_configuration(PEFT_METHOD, model):
             task_type=TaskType.SEQ_2_SEQ_LM,
             target_modules=["encoder.block.*", "decoder.block.*"],
             feedforward_modules=[".*feed_forward.*"],
+        )
+    
+    elif PEFT_METHOD == "ADALORA":
+        config = AdaLoraConfig(
+            peft_type="ADALORA",
+            task_type=TaskType.SEQ_2_SEQ_LM, 
+            r=8, 
+            lora_alpha=16, 
+            lora_target_linear=True,
         )
 
     else:
