@@ -19,6 +19,7 @@ def get_peft_configuration(PEFT_METHOD, model):
     if PEFT_METHOD == "LORA":
         config = LoraConfig(
             task_type=TaskType.SEQ_2_SEQ_LM
+            inference_mode=False
             rank=8,
             lora_alpha=16,
             lora_dropout=0.1,
@@ -49,7 +50,8 @@ def get_peft_configuration(PEFT_METHOD, model):
 
     elif PEFT_METHOD == "IA3":
         config = IA3Config(
-            task_type=TaskType.SEQ_2_SEQ_LM
+            task_type=TaskType.SEQ_2_SEQ_LM,
+            inference_mode=False
             target_modules=["encoder.block.*", "decoder.block.*"],
             feedforward_modules=[".*feed_forward.*"],
         )
