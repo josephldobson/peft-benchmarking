@@ -20,7 +20,7 @@ def get_peft_configuration(PEFT_METHOD, model):
             lora_dropout=0.1,
             rank=16,
             lora_alpha=8,
-            lora_target_linear=True,
+            target_modules=all-linear,
         )
 
     elif PEFT_METHOD == "DORA":
@@ -29,7 +29,7 @@ def get_peft_configuration(PEFT_METHOD, model):
             lora_dropout=0.1,
             rank=16,
             lora_alpha=8,
-            lora_target_linear=True,
+            target_modules=all-linear,
             use_dora=True,
         )
 
