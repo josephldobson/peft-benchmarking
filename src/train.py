@@ -4,7 +4,7 @@ from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, Task
 from utils import tokenize_function, get_peft_configuration, prepare_flan_datasets
 import pandas as pd
 import os
-
+import time
 
 def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
@@ -35,6 +35,7 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
         save_strategy="no",
     )
 
+    training_start_time = time.time()
     trainer = Seq2SeqTrainer(
         model=peft_model,
         args=training_args,
@@ -42,11 +43,15 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
     )
     model.config.use_cache = False
     trainer.train()
+    training_duration = time.time() - training_start_time
+    print(f"training completed in {(training_duration / 3600) :.2f} hours")
 
     pipe = pipeline(
         task="question-answering",
         model=model,
         tokenizer=tokenizer)
+
+    model.print_trainable_parameters()
 
     trainer.model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
