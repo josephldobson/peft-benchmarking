@@ -18,12 +18,23 @@ def tokenize_function(tokenizer, model, x):
 def get_peft_configuration(PEFT_METHOD, model):
     if PEFT_METHOD == "LORA":
         config = LoraConfig(
-            task_type=TaskType.SEQ_2_SEQ_LM
-            inference_mode=False
+            task_type=TaskType.SEQ_2_SEQ_LM,
+            inference_mode=False,
             rank=8,
             lora_alpha=16,
             lora_dropout=0.1,
-            lora_target_linear=True
+            lora_target_linear=True,
+        )
+
+    elif PEFT_METHOD == "DORA":
+        config = LoraConfig(
+            task_type=TaskType.SEQ_2_SEQ_LM,
+            inference_mode=False,
+            rank=8,
+            lora_alpha=16,
+            lora_dropout=0.1,
+            lora_target_linear=True,
+            use_dora=True,
         )
 
     elif PEFT_METHOD == "PROMPT_TUNING":
@@ -45,13 +56,13 @@ def get_peft_configuration(PEFT_METHOD, model):
             peft_type="P_TUNING",
             task_type=TaskType.SEQ_2_SEQ_LM,
             num_virtual_tokens=20,
-            encoder_hidden_size=128
+            encoder_hidden_size=128,
         )
 
     elif PEFT_METHOD == "IA3":
         config = IA3Config(
             task_type=TaskType.SEQ_2_SEQ_LM,
-            inference_mode=False
+            inference_mode=False,
             target_modules=["encoder.block.*", "decoder.block.*"],
             feedforward_modules=[".*feed_forward.*"],
         )
