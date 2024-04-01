@@ -21,8 +21,8 @@ def get_peft_configuration(PEFT_METHOD, model):
             task_type=TaskType.SEQ_2_SEQ_LM
             rank=8,
             lora_alpha=16,
-            lora_dropout=0.1
-            lora_target_linear: true
+            lora_dropout=0.1,
+            lora_target_linear=True
         )
 
     elif PEFT_METHOD == "PROMPT_TUNING":
@@ -50,6 +50,8 @@ def get_peft_configuration(PEFT_METHOD, model):
     elif PEFT_METHOD == "IA3":
         config = IA3Config(
             task_type=TaskType.SEQ_2_SEQ_LM
+            target_modules=["encoder.block.*", "decoder.block.*"],
+            feedforward_modules=[".*feed_forward.*"],
         )
 
     else:
