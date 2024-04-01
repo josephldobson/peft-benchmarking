@@ -18,18 +18,18 @@ def get_peft_configuration(PEFT_METHOD, model):
         config = LoraConfig(
             task_type=TaskType.SEQ_2_SEQ_LM,
             lora_dropout=0.1,
-            rank=16,
+            r=16,
             lora_alpha=8,
-            target_modules=all-linear,
+            target_modules= 'all-linear',
         )
 
     elif PEFT_METHOD == "DORA":
         config = LoraConfig(
             task_type=TaskType.SEQ_2_SEQ_LM,
             lora_dropout=0.1,
-            rank=16,
+            r=16,
             lora_alpha=8,
-            target_modules=all-linear,
+            target_modules= 'all-linear',
             use_dora=True,
         )
 
@@ -68,7 +68,7 @@ def get_peft_configuration(PEFT_METHOD, model):
             task_type=TaskType.SEQ_2_SEQ_LM, 
             r=8, 
             lora_alpha=16, 
-            lora_target_linear=True,
+            target_modules= 'all-linear',
         )
 
     else:
