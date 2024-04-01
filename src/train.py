@@ -49,7 +49,10 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
         model=model,
         tokenizer=tokenizer)
 
-    model.print_trainable_parameters()
+    trainable_params = model.num_parameters(only_trainable=True)
+    total_params = model.num_parameters(only_trainable=False)
+    print(f"number of trainable parameters: {trainable_params}")
+    print(f"percent of trainable parameters: {(trainable_params / total_params) * 100:.3f}")
 
     trainer.model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
