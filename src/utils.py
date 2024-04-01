@@ -22,7 +22,7 @@ def get_peft_configuration(PEFT_METHOD, model):
             rank=8,
             lora_alpha=16,
             lora_dropout=0.1
-            target_modules = ['q_proj','k_proj','v_proj','o_proj','gate_proj','down_proj','up_proj','lm_head']
+            lora_target_linear: true
         )
 
     elif PEFT_METHOD == "PROMPT_TUNING":
