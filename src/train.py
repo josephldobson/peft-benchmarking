@@ -2,18 +2,10 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArgume
 from datasets import load_dataset, DatasetDict, load_from_disk
 from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig
 from utils import tokenize_function, get_peft_configuration, prepare_flan_datasets
-from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo, nvmlDeviceGetUtilizationRates
+from gpu_usage_callback import GpuUsageCallback
 import pandas as pd
 import os
 import time
-
-
-def print_gpu_usage():
-    nvmlInit()
-    handle = nvmlDeviceGetHandleByIndex(0)
-    mem = nvmlDeviceGetMemoryInfo(handle)
-    util = nvmlDeviceGetUtilizationRates(handle)
-    print(f"GPU memory occupied: {mem.used//1024**2} MB.\nGPU utlization: {util.utilization}")
 
 def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
@@ -48,10 +40,10 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
         model=peft_model,
         args=training_args,
         train_dataset=tokenized_trainsets,
+        callbacks=[GpuUsageCallback]
     )
     model.config.use_cache = False
     trainer.train()
-    print_gpu_usage()
     training_duration = time.time() - training_start_time
     print(f"training completed in {(training_duration / 3600) :.2f} hours")
 
