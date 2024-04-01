@@ -21,7 +21,6 @@ def get_peft_configuration(PEFT_METHOD, model):
             task_type=TaskType.SEQ_2_SEQ_LM,
             rank=8,
             lora_alpha=16,
-            lora_dropout=0.1,
             lora_target_linear=True,
         )
 
@@ -30,7 +29,6 @@ def get_peft_configuration(PEFT_METHOD, model):
             task_type=TaskType.SEQ_2_SEQ_LM,
             rank=8,
             lora_alpha=16,
-            lora_dropout=0.1,
             lora_target_linear=True,
             use_dora=True,
         )
