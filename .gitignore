@@ -8,3 +8,4 @@ src/data/tokenized_trainsets/
 src/data/tokenized_testsets/
 MMLU-eval
 src/testing.ipynb
+models
