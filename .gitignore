@@ -6,6 +6,5 @@ __pycache__/
 *.so
 src/data/tokenized_trainsets/
 src/data/tokenized_testsets/
-src/models/
 MMLU-eval
 src/testing.ipynb
