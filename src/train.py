@@ -24,6 +24,7 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
     tokenized_trainsets, tokenized_testsets = prepare_flan_datasets(peft_model, tokenizer)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     peft_model.to(device)
+    print(device)
 
     print(peft_method)
     print(peft_model.print_trainable_parameters())
