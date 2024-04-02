@@ -64,9 +64,9 @@ def get_peft_configuration(PEFT_METHOD, model):
         config = AdaLoraConfig(
             peft_type="ADALORA",
             task_type=TaskType.SEQ_2_SEQ_LM,
-            r=8,
-            lora_alpha=16,
-            target_modules= 'all-linear',
+            lora_dropout=0.1,
+            r=16,
+            lora_alpha=8,
         )
 
     else:
