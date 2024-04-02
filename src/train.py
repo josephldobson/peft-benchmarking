@@ -8,7 +8,7 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
     output_dir = "models/" + model_name + "_" + peft_method
 
-    tokenizer = T5Tokenizer.from_pretrained(model_name, use_fast=True, legacy=False)
+    tokenizer = T5Tokenizer.from_pretrained(model_name, use_fast=True, legacy=False, model_max_length=1024)
     model = T5ForConditionalGeneration.from_pretrained(model_name)
 
     config = get_peft_configuration(peft_method, model)
@@ -20,7 +20,10 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
             output.requires_grad_(True)
 
     peft_model = get_peft_model(model, config)
-    tokenized_trainsets, tokenized_testsets = prepare_flan_datasets(model, tokenizer)
+    tokenized_trainsets, tokenized_testsets = prepare_flan_datasets(peft_model, tokenizer)
+
+    print(peft_method)
+    print(peft_model.print_trainable_parameters())
 
     training_args = Seq2SeqTrainingArguments(
         output_dir=output_dir,
@@ -39,28 +42,19 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
         train_dataset=tokenized_trainsets,
         callbacks=[GpuUsageCallback]
     )
-    model.config.use_cache = False
+
+    peft_model.config.use_cache = False
     trainer.train()
     training_duration = time.time() - training_start_time
     print(f"training completed in {(training_duration / 3600) :.2f} hours")
-
-    pipe = pipeline(
-        task="question-answering",
-        model=model,
-        tokenizer=tokenizer)
-
-    trainable_params = model.num_parameters(only_trainable=True)
-    total_params = model.num_parameters(only_trainable=False)
-    print(f"number of trainable parameters: {trainable_params}")
-    print(f"percent of trainable parameters: {(trainable_params / total_params) * 100:.3f}")
 
     trainer.model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
 
 
 if __name__ == '__main__':
-    for PEFT_METHOD in ["LORA", "PROMPT_TUNING", "PREFIX_TUNING", "P_TUNING", "IA3", "ADALORA", "DORA"]:
-        MODEL_NAME = "t5-small"
+    for PEFT_METHOD in ["LORA", "PROMPT_TUNING", "PREFIX_TUNING", "P_TUNING", "IA3"]:
+        MODEL_NAME = "t5-base"
         BATCH_SIZE = 128
         NUM_EPOCHS = 1
 
