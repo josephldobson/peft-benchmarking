@@ -55,7 +55,7 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
 if __name__ == '__main__':
     for PEFT_METHOD in ["LORA", "PROMPT_TUNING", "PREFIX_TUNING", "P_TUNING", "IA3"]:
         MODEL_NAME = "t5-base"
-        BATCH_SIZE = 128
-        NUM_EPOCHS = 1
+        BATCH_SIZE = 64
+        NUM_EPOCHS = 5
 
         train_and_save(PEFT_METHOD, MODEL_NAME, BATCH_SIZE, NUM_EPOCHS)
