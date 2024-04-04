@@ -34,7 +34,10 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
         learning_rate=1e-3,
         optim="adamw_torch",
         num_train_epochs=num_epochs,
-        save_strategy="no",
+        save_strategy="epoch",
+        save_total_limit = 4,
+        logging_steps = 'epoch',
+        load_best_model_at_end=True,
     )
 
     training_start_time = time.time()
@@ -42,6 +45,7 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
         model=peft_model,
         args=training_args,
         train_dataset=tokenized_trainsets
+        eval_dataset=tokenized_valsets
         # callbacks=[GpuUsageCallback]
     )
 
@@ -56,9 +60,8 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
 if __name__ == '__main__':
     for PEFT_METHOD in ["LORA"]:
-        for NUM_EPOCHS in [5, 10, 30]:
-            MODEL_NAME = "flan-t5-base"
-            BATCH_SIZE = 64
-            NUM_EPOCHS = 1
+        MODEL_NAME = "flan-t5-base"
+        BATCH_SIZE = 64
+        NUM_EPOCHS = 15
 
-            train_and_save(PEFT_METHOD, MODEL_NAME, BATCH_SIZE, NUM_EPOCHS)
+        train_and_save(PEFT_METHOD, MODEL_NAME, BATCH_SIZE, NUM_EPOCHS)
