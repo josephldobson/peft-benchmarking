@@ -44,8 +44,8 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
     trainer = Seq2SeqTrainer(
         model=peft_model,
         args=training_args,
-        train_dataset=tokenized_trainsets
-        eval_dataset=tokenized_valsets
+        train_dataset=tokenized_trainsets,
+        eval_dataset=tokenized_valsets,
         # callbacks=[GpuUsageCallback]
     )
 
