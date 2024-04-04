@@ -34,10 +34,7 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
         learning_rate=1e-3,
         optim="adamw_torch",
         num_train_epochs=num_epochs,
-        save_strategy="epoch",
-        save_total_limit = 4,
-        logging_steps = 'epoch',
-        load_best_model_at_end=True,
+        save_strategy="no",
     )
 
     training_start_time = time.time()
