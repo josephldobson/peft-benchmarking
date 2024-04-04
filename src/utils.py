@@ -29,6 +29,7 @@ def get_peft_configuration(PEFT_METHOD, model):
             r=16,
             lora_alpha=8,
             use_dora=True,
+            target_modules=["q", "k", "v", "o", "wi", "wo"],
         )
 
     elif PEFT_METHOD == "PROMPT_TUNING":

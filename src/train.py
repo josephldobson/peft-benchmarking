@@ -3,6 +3,7 @@ from peft import get_peft_model
 from utils import get_peft_configuration, prepare_flan_datasets
 from gpu_usage_callback import GpuUsageCallback
 import time
+import torch
 
 def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
@@ -21,6 +22,8 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
     peft_model = get_peft_model(model, config)
     tokenized_trainsets, tokenized_testsets = prepare_flan_datasets(peft_model, tokenizer)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    peft_model.to(device)
 
     print(peft_method)
     print(peft_model.print_trainable_parameters())
@@ -39,8 +42,8 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
     trainer = Seq2SeqTrainer(
         model=peft_model,
         args=training_args,
-        train_dataset=tokenized_trainsets,
-        callbacks=[GpuUsageCallback]
+        train_dataset=tokenized_trainsets
+        # callbacks=[GpuUsageCallback]
     )
 
     peft_model.config.use_cache = False
@@ -53,9 +56,9 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
 
 if __name__ == '__main__':
-    for PEFT_METHOD in ["LORA", "PROMPT_TUNING", "PREFIX_TUNING", "P_TUNING", "IA3"]:
+    for PEFT_METHOD in ["DORA", "ADALORA"]:
         MODEL_NAME = "t5-base"
-        BATCH_SIZE = 128
-        NUM_EPOCHS = 1
+        BATCH_SIZE = 64
+        NUM_EPOCHS = 5
 
         train_and_save(PEFT_METHOD, MODEL_NAME, BATCH_SIZE, NUM_EPOCHS)
