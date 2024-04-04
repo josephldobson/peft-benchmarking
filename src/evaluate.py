@@ -10,18 +10,18 @@ import os
 
 def format_mmlu_example(example, incl_answer = False):
     # Extracting the components of the example
+    subject = example['subject']
     question = example['question']
     choices = example['choices']
     answer = example['answer']
 
     # Formatting the choices
-    options = "\n".join([f"{chr(65+i)}: {choice}" for i, choice in enumerate(choices)])
+    options = " ".join([f"{chr(65+i)}. {choice} " for i, choice in enumerate(choices)])
+    formatted_example = f"Answer the following question: {question} Pick the correct answer from the following options:  {options}\nAnswer: "
 
     # Formatting the entire example
     if incl_answer:
-        formatted_example = f"Question: {question}\nOptions:\n{options}\nAnswer: {chr(65+answer)}."
-    else:
-        formatted_example = f"Question: {question}\nOptions:\n{options}\nAnswer:"
+        formatted_example = f"{formatted_example}{chr(65+answer)}"
 
     return formatted_example
 
@@ -105,4 +105,4 @@ def eval_mmlu(model_path):
     return test_accuracy, subject_acc
 
 if __name__ == '__main__':
-    eval_mmlu('models/t5-base_IA3') 
+    eval_mmlu('models/t5-base_LORA') 
