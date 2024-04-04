@@ -71,10 +71,9 @@ def tokenize_function(tokenizer, model, x):
     question = x['question']
     choices = x['choices']
 
-    # Formatting the choices
     ans = {0: 'A', 1: 'B', 2: 'C', 3: 'D'}
     options = " ".join([f"{chr(65+i)}. {choice} " for i, choice in enumerate(choices)])
-    input = f"{question} Pick the correct answer from the following options:  {options}\nAnswer with A, B, C or D: "
+    input = f"{question} Pick the correct answer from the following options: {options}\nAnswer with A, B, C or D: "
     output = ans[x['answer']]
 
     tokenized_inputs = tokenizer(input, padding="max_length", truncation=True, max_length=model.config.max_length)
@@ -95,8 +94,8 @@ def prepare_flan_datasets(model, tokenizer):
         return tokenized_trainsets, tokenized_testsets, tokenized_valsets
 
     else:
-        trainset = datasets.load_dataset("cais/mmlu", "all", split='test+auxiliary_train')
-        testset = datasets.load_dataset("cais/mmlu", "all", split="validation")
+        trainset = datasets.load_dataset("cais/mmlu", "all", split='auxiliary_train+validation')
+        testset = datasets.load_dataset("cais/mmlu", "all", split="test")
         devset = datasets.load_dataset("cais/mmlu", "all", split="dev")
 
         tokenized_trainsets = trainset.map(
