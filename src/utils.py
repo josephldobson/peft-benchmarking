@@ -4,15 +4,6 @@ from peft import PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, P
 import pandas as pd
 
 
-def tokenize_function(tokenizer, model, x):
-    tokenized_inputs = tokenizer(x['source'], padding="max_length", truncation=True, max_length=model.config.max_length)
-    tokenized_targets = tokenizer(x['target'], padding="max_length", truncation=True, max_length=model.config.max_length)
-    return {
-        "input_ids": tokenized_inputs["input_ids"],
-        "attention_mask": tokenized_inputs["attention_mask"],
-        "labels": tokenized_targets["input_ids"],
-    }
-
 def get_peft_configuration(PEFT_METHOD, model):
     if PEFT_METHOD == "LORA":
         config = LoraConfig(
@@ -76,33 +67,55 @@ def get_peft_configuration(PEFT_METHOD, model):
     return config
 
 
+def tokenize_function(tokenizer, model, x):
+    question = x['question']
+    choices = x['choices']
+
+    # Formatting the choices
+    ans = {0: 'A', 1: 'B', 2: 'C', 3: 'D'}
+    options = " ".join([f"{chr(65+i)}. {choice} " for i, choice in enumerate(choices)])
+    input = f"{question} Pick the correct answer from the following options:  {options}\nAnswer with A, B, C or D: "
+    output = ans[x['answer']]
+
+    tokenized_inputs = tokenizer(input, padding="max_length", truncation=True, max_length=model.config.max_length)
+    tokenized_targets = tokenizer(output, padding="max_length", truncation=True, max_length=model.config.max_length)
+    return {
+        "input_ids": tokenized_inputs["input_ids"],
+        "attention_mask": tokenized_inputs["attention_mask"],
+        "labels": tokenized_targets["input_ids"],
+    }
+
+
 def prepare_flan_datasets(model, tokenizer):
     NUM_PROCS = os.cpu_count() - 1
-    if os.path.exists("data/tokenized_testsets"):
+    if os.path.exists("data/tokenized_testsets") and os.path.exists("data/tokenized_trainsets"):
         tokenized_trainsets = datasets.load_from_disk("data/tokenized_trainsets")
         tokenized_testsets = datasets.load_from_disk("data/tokenized_testsets")
-        return tokenized_trainsets, tokenized_testsets
+        tokenized_valsets = datasets.load_from_disk("data/tokenized_valsets")
+        return tokenized_trainsets, tokenized_testsets, tokenized_valsets
 
     else:
-        dataset = datasets.load_dataset("sordonia/flan-10k-flat", split="train") # split = "train" for full dataset
-        flan_dict = pd.read_csv("data/flan_collection_info.csv")
+        trainset = datasets.load_dataset("cais/mmlu", "all", split='test+auxiliary_train')
+        testset = datasets.load_dataset("cais/mmlu", "all", split="validation")
+        devset = datasets.load_dataset("cais/mmlu", "all", split="dev")
 
-        multi_choice_qa_tasks_list = flan_dict.loc[flan_dict["Generic Task Category"] == "Multiple-Choice QA (no trivia knowledge required)"]["Specific Task Category"].drop_duplicates().tolist()
-        multi_choice_qa_tasks_set = set(multi_choice_qa_tasks_list)
-        mc_qa_dataset = dataset.filter(lambda r: r["task_name"] in multi_choice_qa_tasks_set, num_proc=NUM_PROCS)
-        mc_qa_trainset = mc_qa_dataset.filter(lambda r: r["split"] == "train")
-        mc_qa_testset = mc_qa_dataset.filter(lambda r: r["split"] == "test")
-
-        tokenized_trainsets = mc_qa_trainset.map(
+        tokenized_trainsets = trainset.map(
             lambda x: tokenize_function(tokenizer, model, x),
-            batched=True
+            batched=False
         )
 
-        tokenized_testsets = mc_qa_testset.map(
+        tokenized_testsets = testset.map(
             lambda x: tokenize_function(tokenizer, model, x),
-            batched=True
+            batched=False
         )
+
+        tokenized_valsets = devset.map(
+            lambda x: tokenize_function(tokenizer, model, x),
+            batched=False
+        )
+
         tokenized_trainsets.save_to_disk("data/tokenized_trainsets")
         tokenized_testsets.save_to_disk("data/tokenized_testsets")
+        tokenized_valsets.save_to_disk("data/tokenized_valsets")
 
-        return tokenized_trainsets, tokenized_testsets
+        return tokenized_trainsets, tokenized_testsets, tokenized_valsets
