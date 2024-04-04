@@ -56,8 +56,9 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
 if __name__ == '__main__':
     for PEFT_METHOD in ["LORA"]:
-        MODEL_NAME = "flan-t5-base"
-        BATCH_SIZE = 64
-        NUM_EPOCHS = 1
+        for NUM_EPOCHS in [5, 10, 30]:
+            MODEL_NAME = "flan-t5-base"
+            BATCH_SIZE = 64
+            NUM_EPOCHS = 1
 
-        train_and_save(PEFT_METHOD, MODEL_NAME, BATCH_SIZE, NUM_EPOCHS)
+            train_and_save(PEFT_METHOD, MODEL_NAME, BATCH_SIZE, NUM_EPOCHS)
