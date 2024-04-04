@@ -3,11 +3,4 @@ channels:
   - defaults
   - pip
 dependencies:
-  - python=3.11.4
-  - numpy
-  - pytorch
-  - transformers
-  - pandas
-  - peft
-  - datasets
-  - nvidia-ml-py3
+  - trans
