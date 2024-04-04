@@ -1,5 +1,6 @@
 import torch
 import pandas as pd
+import time
 from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, logging, AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig
 from utils import tokenize_function, get_peft_configuration, prepare_flan_datasets
@@ -39,7 +40,7 @@ def eval_mmlu(model_path):
     ## load the pretrained model and tokenizer
     config = PeftConfig.from_pretrained(model_path)
     model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path)
-    tokenizer = AutoTokenizer.from_pretrained(config.base_model_name_or_path)
+    tokenizer = AutoTokenizer.from_pretrained(config.base_model_name_or_path, model_max_length=1024)
     model = PeftModel.from_pretrained(model, model_path)
 
     ## datasets
@@ -57,12 +58,13 @@ def eval_mmlu(model_path):
     total = len(mmlu_dataset) - 5*len(set(mmlu_dataset['subject']))
 
     for subject in subjects:
-
+        print(f'\nEvaluating {subject}\n')
         # FLAN uses 5-shot prompting for MMLU, so we use that here
         subject_set = mmlu_dataset.filter(lambda example: example['subject'] == subject)
         dev_set, test_set = subject_set.select(range(5)), subject_set.select(range(5,len(subject_set)))
         formatted_egs = [format_mmlu_example(eg,incl_answer=True) for eg in dev_set]
         five_shot_text = "\n\n".join(formatted_egs)
+        begin = time.time()
 
         for example in test_set:
 
@@ -76,27 +78,25 @@ def eval_mmlu(model_path):
             input_text = '\n\n'.join((five_shot_text, formatted_example))
             inputs = tokenizer(input_text, return_tensors="pt")
 
-            print(input_ids)
-            # Ensure the model is in evaluation mode and torch.no_grad() is used for inference
-
-            #TODO BROKEN -------------- (doesnt seem to be giving right output)
+            # generate outputs
             with torch.no_grad():
-                output_ids = model.generate(inputs)
+                output_ids = model.generate(input_ids=inputs.input_ids, max_length=5)
 
             output_answer = tokenizer.decode(output_ids[0], skip_special_tokens=True)
             first_char = output_answer.strip()[0].upper() if output_answer else ''
-            ## -------------------
 
-            # Assuming your model outputs the option letter (e.g., "A") as the answer
+            # map outputs to 0-3
             predicted_option = ord(first_char) - ord('A')
 
-            # Update the metric
+            # update scores
             if predicted_option == answer:
                 correct += 1
                 subject_acc[subject][0][0] += 1
+            
+        end = time.time()
 
         subject_acc[subject][1] = subject_acc[subject][0][0]/subject_acc[subject][0][1]
-        print(f'Accuracy on {subject}: {subject_acc[subject][1]:.3f}')
+        print(f'Accuracy on {subject}: {subject_acc[subject][1]:.3f}; took {end-begin}s')
 
     test_accuracy = correct/total
 
@@ -105,4 +105,4 @@ def eval_mmlu(model_path):
     return test_accuracy, subject_acc
 
 if __name__ == '__main__':
-    eval_mmlu('models/t5-small_P_TUNING')
+    eval_mmlu('models/t5-base_IA3') 
