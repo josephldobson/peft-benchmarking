@@ -19,7 +19,7 @@ def format_mmlu_example(example, incl_answer = False, five_shot=False):
 
     # Formatting the choices
     options = " ".join([f"{chr(65+i)}. {choice} " for i, choice in enumerate(choices)])
-    formatted_example = f"{question} Pick the correct answer from the following options: {options}\nAnswer with A, B, C or D: "
+    formatted_example = f"{question} Pick the correct answer from the options: {options}\nAnswer with A, B, C or D: "
 
     # Formatting the entire example
     if incl_answer:
@@ -138,10 +138,18 @@ def eval_mmlu(model_path, PEFT=True):
     return test_accuracy, subject_acc
 
 if __name__ == '__main__':
+    results_dir = 'results'
+    os.makedirs(results_dir, exist_ok=True)
+
     for PEFT_METHOD in ["ADALORA", "DORA", "IA3", "LORA", "P_TUNING", "PREFIX_TUNING", "PROMPT_TUNING"]:
         test_acc, subject_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1')
-        with open(f'results/flan-t5-base_{PEFT_METHOD}_1_MMLU-acc.pickle', 'wb') as handle:
+
+        # Forming the file paths
+        acc_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_MMLU-acc.pickle')
+        subject_accs_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_subject-accs.pickle')
+
+        with open(acc_file_path, 'wb') as handle:
             pkl.dump(test_acc, handle)
 
-        with open(f'results/flan-t5-base_{PEFT_METHOD}_1_subject-accs.pickle', 'wb') as handle:
+        with open(subject_accs_file_path, 'wb') as handle:
             pkl.dump(subject_acc, handle)
