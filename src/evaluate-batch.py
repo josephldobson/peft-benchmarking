@@ -1,5 +1,4 @@
 import torch
-import bitsandbytes
 import pandas as pd
 import time
 from torch.utils.data import DataLoader, Dataset
@@ -12,14 +11,13 @@ import os
 
 def format_mmlu_example(example, incl_answer = False, five_shot=False):
     # Extracting the components of the example
-    subject = example['subject']
     question = example['question']
     choices = example['choices']
     answer = example['answer']
 
     # Formatting the choices
     options = " ".join([f"{chr(65+i)}. {choice} " for i, choice in enumerate(choices)])
-    formatted_example = f"Answer the following question: {question} Pick the correct answer from the following options:  {options}\nAnswer: "
+    formatted_example = f"{question} Pick the correct answer from the following options: {options}\nAnswer with A, B, C or D: "
 
     # Formatting the entire example
     if incl_answer:
@@ -34,10 +32,10 @@ def format_mmlu_example(example, incl_answer = False, five_shot=False):
 class CustomDataset(Dataset):
     def __init__(self, ds):
         self.ds = ds
-    
+
     def __len__(self):
         return len(self.ds)
-    
+
     def __getitem__(self, idx):
         # Extract the items you want to return
         item = self.ds[idx]
@@ -63,14 +61,12 @@ def eval_mmlu(model_path, PEFT=True):
     ## load the pretrained model and tokenizer
     if PEFT:
         config = PeftConfig.from_pretrained(model_path)
-        model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path,
-                                                      load_in_8bit=True)
+        model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path)
         tokenizer = AutoTokenizer.from_pretrained(config.base_model_name_or_path)
         model = PeftModel.from_pretrained(model, model_path)
         #.to(device)
     else:
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_path,
-                                                      load_in_8bit=True)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
         #.to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_path)
 
@@ -106,10 +102,8 @@ def eval_mmlu(model_path, PEFT=True):
         inputDL = DataLoader(input_texts, batch_size=16, shuffle=True, num_workers=6)
 
         for i, (prompts, answers) in enumerate(inputDL):
-            
 
             inputs = tokenizer(prompts, return_tensors="pt", padding=True).to(device)
-
             with torch.no_grad():
                 output_ids = model.generate(input_ids=inputs.input_ids)
 
@@ -123,10 +117,10 @@ def eval_mmlu(model_path, PEFT=True):
 
             batch_acc = np.sum(predicted_options==answers.numpy())
             subject_acc[subject][0][0] += batch_acc
-            
+
             # print(f'batch {i}, acc {batch_acc}')
 
-      
+
         end = time.time()
 
         subject_acc[subject][1] = subject_acc[subject][0][0]/subject_acc[subject][0][1]
@@ -139,4 +133,4 @@ def eval_mmlu(model_path, PEFT=True):
     return test_accuracy, subject_acc
 
 if __name__ == '__main__':
-    eval_mmlu('models/google/flan-t5-base_LORA_15') 
+    eval_mmlu('models/google/flan-t5-base_LORA_1')

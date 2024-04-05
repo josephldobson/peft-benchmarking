@@ -10,7 +10,6 @@ import os
 
 def format_mmlu_example(example, incl_answer = False):
     # Extracting the components of the example
-    subject = example['subject']
     question = example['question']
     choices = example['choices']
     answer = example['answer']
@@ -98,7 +97,7 @@ def eval_mmlu(model_path, PEFT='True'):
             if predicted_option == answer:
                 correct += 1
                 subject_acc[subject][0][0] += 1
-            
+
         end = time.time()
 
         subject_acc[subject][1] = subject_acc[subject][0][0]/subject_acc[subject][0][1]
@@ -111,4 +110,4 @@ def eval_mmlu(model_path, PEFT='True'):
     return test_accuracy, subject_acc
 
 if __name__ == '__main__':
-    eval_mmlu('models/google/flan-t5-base_LORA_15') 
+    eval_mmlu('models/google/flan-t5-base_LORA_15')
