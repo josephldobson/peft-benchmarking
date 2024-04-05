@@ -59,6 +59,6 @@ if __name__ == '__main__':
     for PEFT_METHOD in ["ADALORA", "DORA", "IA3", "LORA", "P_TUNING", "PREFIX_TUNING", "PROMPT_TUNING"]:
         MODEL_NAME = "google/flan-t5-base"
         BATCH_SIZE = 32
-        NUM_EPOCHS = 4
+        NUM_EPOCHS = 1
 
         train_and_save(PEFT_METHOD, MODEL_NAME, BATCH_SIZE, NUM_EPOCHS)
