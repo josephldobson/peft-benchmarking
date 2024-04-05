@@ -29,9 +29,8 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
 
     training_args = Seq2SeqTrainingArguments(
         output_dir=output_dir,
-        auto_find_batch_size=True,
         per_device_train_batch_size=batch_size,
-        learning_rate=1e-3,
+        learning_rate=1e-4,
         optim="adamw_torch",
         num_train_epochs=num_epochs,
         save_strategy="no",
@@ -59,6 +58,6 @@ if __name__ == '__main__':
     for PEFT_METHOD in ["ADALORA", "DORA", "IA3", "LORA", "P_TUNING", "PREFIX_TUNING", "PROMPT_TUNING"]:
         MODEL_NAME = "google/flan-t5-base"
         BATCH_SIZE = 32
-        NUM_EPOCHS = 4
+        NUM_EPOCHS = 1
 
         train_and_save(PEFT_METHOD, MODEL_NAME, BATCH_SIZE, NUM_EPOCHS)
