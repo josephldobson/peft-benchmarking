@@ -152,4 +152,4 @@ if __name__ == '__main__':
             pkl.dump(test_acc, handle)
 
         with open(subject_accs_file_path, 'wb') as handle:
-            pkl.dump(subject_acc, handle
+            pkl.dump(subject_acc, handle)
