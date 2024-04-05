@@ -74,10 +74,10 @@ def tokenize_function(tokenizer, model, x):
     ans = {0: 'A', 1: 'B', 2: 'C', 3: 'D'}
     options = " ".join([f"{chr(65+i)}. {choice} " for i, choice in enumerate(choices)])
     input = f"{question} Pick the correct answer from the following options: {options}\nAnswer with A, B, C or D: "
-    output = ans[x['answer']]
+    output = ans[x['answer']] + tokenizer.eos_token
 
     tokenized_inputs = tokenizer(input, padding="max_length", truncation=True, max_length=model.config.max_length)
-    tokenized_targets = tokenizer(output, padding="max_length", truncation=True, max_length=model.config.max_length)
+    tokenized_targets = tokenizer(output_text, truncation=True)
     return {
         "input_ids": tokenized_inputs["input_ids"],
         "attention_mask": tokenized_inputs["attention_mask"],
