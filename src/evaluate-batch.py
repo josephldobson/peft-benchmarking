@@ -19,7 +19,7 @@ def format_mmlu_example(example, incl_answer = False, five_shot=False):
 
     # Formatting the choices
     options = " ".join([f"{chr(65+i)}. {choice} " for i, choice in enumerate(choices)])
-    formatted_example = f"{question} Pick the correct answer from the options: {options}\nAnswer with A, B, C or D: "
+    formatted_example = f"{question} Pick the correct answer from the following options: {options}\nAnswer with A, B, C or D: "
 
     # Formatting the entire example
     if incl_answer:
@@ -152,4 +152,4 @@ if __name__ == '__main__':
             pkl.dump(test_acc, handle)
 
         with open(subject_accs_file_path, 'wb') as handle:
-            pkl.dump(subject_acc, handle)
+            pkl.dump(subject_acc, handle
