@@ -1,3 +1,4 @@
+from numpy.random import test
 import torch
 import pandas as pd
 import time
@@ -106,7 +107,7 @@ def eval_mmlu(model_path, PEFT=True):
         inputDL = DataLoader(input_texts, batch_size=32, shuffle=True, num_workers=0)
 
         for i, (prompts, answers) in enumerate(inputDL):
-            
+
             inputs = tokenizer(prompts, return_tensors="pt", padding=True).to(device)
             with torch.no_grad():
                 output_ids = model.generate(input_ids=inputs.input_ids)
@@ -138,10 +139,9 @@ def eval_mmlu(model_path, PEFT=True):
 
 if __name__ == '__main__':
     for PEFT_METHOD in ["ADALORA", "DORA", "IA3", "LORA", "P_TUNING", "PREFIX_TUNING", "PROMPT_TUNING"]:
-        test_acc, subject_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1') 
+        test_acc, subject_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1')
         with open(f'results/flan-t5-base_{PEFT_METHOD}_1_MMLU-acc.pickle', 'wb') as handle:
             pkl.dump(test_acc, handle)
-        
+
         with open(f'results/flan-t5-base_{PEFT_METHOD}_1_subject-accs.pickle', 'wb') as handle:
             pkl.dump(subject_acc, handle)
-
