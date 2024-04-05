@@ -1,6 +1,8 @@
 import torch
+import bitsandbytes
 import pandas as pd
 import time
+from torch.utils.data import DataLoader, Dataset
 from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer, logging, AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 from peft import PeftModel, PeftConfig, get_peft_model, PromptTuningConfig, TaskType, LoraConfig, PrefixTuningConfig, PromptEncoderConfig
 from utils import tokenize_function, get_peft_configuration, prepare_flan_datasets
@@ -8,7 +10,7 @@ from datasets import load_dataset, DatasetDict, load_from_disk
 import numpy as np
 import os
 
-def format_mmlu_example(example, incl_answer = False):
+def format_mmlu_example(example, incl_answer = False, five_shot=False):
     # Extracting the components of the example
     subject = example['subject']
     question = example['question']
@@ -23,30 +25,53 @@ def format_mmlu_example(example, incl_answer = False):
     if incl_answer:
         formatted_example = f"{formatted_example}{chr(65+answer)}"
 
-    return formatted_example
+    if five_shot:
+        formatted_example = '\n\n'.join((five_shot, formatted_example))
 
-def eval_mmlu(model_path, PEFT='True'):
+    return {'formatted':formatted_example}
+
+
+class CustomDataset(Dataset):
+    def __init__(self, ds):
+        self.ds = ds
+    
+    def __len__(self):
+        return len(self.ds)
+    
+    def __getitem__(self, idx):
+        # Extract the items you want to return
+        item = self.ds[idx]
+        formatted_text = item['formatted']
+        answer = item['answer']
+        return formatted_text, answer
+
+
+def eval_mmlu(model_path, PEFT=True):
     """
     Evaluates a model on the MMLU dataset, using 5-shot prompting.
 
     Args:
         model_path (str): path to model
         tokenizer_path (str): path to model tokenizer
-        PEFT (bool): whether the model needs to be loaded with PEFT calls
-
+        PEFT (bool)
     Returns:
         test_accuracy (float): model accuracy
         subject_acc (dict): dictionary with accuracy by subject, with values ([num_correct,total],accuracy)
     """
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     ## load the pretrained model and tokenizer
     if PEFT:
         config = PeftConfig.from_pretrained(model_path)
-        model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path)
-        tokenizer = AutoTokenizer.from_pretrained(config.base_model_name_or_path, max_model_length = 1024)
+        model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path,
+                                                      load_in_8bit=True)
+        tokenizer = AutoTokenizer.from_pretrained(config.base_model_name_or_path)
         model = PeftModel.from_pretrained(model, model_path)
+        #.to(device)
     else:
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_path,
+                                                      load_in_8bit=True)
+        #.to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     ## datasets
@@ -68,37 +93,40 @@ def eval_mmlu(model_path, PEFT='True'):
         # FLAN uses 5-shot prompting for MMLU, so we use that here
         subject_set = mmlu_dataset.filter(lambda example: example['subject'] == subject)
         dev_set, test_set = subject_set.select(range(5)), subject_set.select(range(5,len(subject_set)))
-        formatted_egs = [format_mmlu_example(eg,incl_answer=True) for eg in dev_set]
+        formatted_egs = [format_mmlu_example(eg,incl_answer=True)['formatted'] for eg in dev_set]
         five_shot_text = "\n\n".join(formatted_egs)
         begin = time.time()
 
-        for example in test_set:
+        input_texts = test_set.map(format_mmlu_example, fn_kwargs={"incl_answer": False, "five_shot": five_shot_text})
 
-            question = example['question']
-            subject = example['subject']
-            choices = example['choices']
-            answer = example['answer']
+        input_texts = CustomDataset(input_texts.map(remove_columns=['subject','question','choices']))
 
-            # format inputs
-            formatted_example = format_mmlu_example(example, incl_answer=False)
-            input_text = '\n\n'.join((five_shot_text, formatted_example))
-            inputs = tokenizer(input_text, return_tensors="pt")
+        print(input_texts)
 
-            # generate outputs
+        inputDL = DataLoader(input_texts, batch_size=16, shuffle=True, num_workers=6)
+
+        for i, (prompts, answers) in enumerate(inputDL):
+            
+
+            inputs = tokenizer(prompts, return_tensors="pt", padding=True).to(device)
+
             with torch.no_grad():
-                output_ids = model.generate(input_ids=inputs.input_ids, max_length=5)
+                output_ids = model.generate(input_ids=inputs.input_ids)
 
-            output_answer = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-            first_char = output_answer.strip()[0].upper() if output_answer else ''
+            output_answers = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
+
+            first_chars = [x.strip()[0].upper() if x else '' for x in output_answers]
+            print(first_chars)
 
             # map outputs to 0-3
-            predicted_option = ord(first_char) - ord('A')
+            predicted_options = np.array([ord(x) for x in first_chars]) - ord('A')
 
-            # update scores
-            if predicted_option == answer:
-                correct += 1
-                subject_acc[subject][0][0] += 1
+            batch_acc = np.sum(predicted_options==answers.numpy())
+            subject_acc[subject][0][0] += batch_acc
             
+            # print(f'batch {i}, acc {batch_acc}')
+
+      
         end = time.time()
 
         subject_acc[subject][1] = subject_acc[subject][0][0]/subject_acc[subject][0][1]
