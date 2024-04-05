@@ -104,7 +104,7 @@ def eval_mmlu(model_path, PEFT=True):
 
         input_texts = CustomDataset(input_texts.map(remove_columns=['subject','question','choices']))
 
-        inputDL = DataLoader(input_texts, batch_size=32, shuffle=True, num_workers=0)
+        inputDL = DataLoader(input_texts, batch_size=16, shuffle=True, num_workers=0)
 
         for i, (prompts, answers) in enumerate(inputDL):
 
