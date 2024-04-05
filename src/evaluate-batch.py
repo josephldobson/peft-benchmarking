@@ -8,6 +8,7 @@ from utils import tokenize_function, get_peft_configuration, prepare_flan_datase
 from datasets import load_dataset, DatasetDict, load_from_disk
 import numpy as np
 import os
+import pickle as pkl
 
 def format_mmlu_example(example, incl_answer = False, five_shot=False):
     # Extracting the components of the example
@@ -51,7 +52,7 @@ def eval_mmlu(model_path, PEFT=True):
     Args:
         model_path (str): path to model
         tokenizer_path (str): path to model tokenizer
-        PEFT (bool)
+        PEFT (bool): whether to use PEFT configurations
     Returns:
         test_accuracy (float): model accuracy
         subject_acc (dict): dictionary with accuracy by subject, with values ([num_correct,total],accuracy)
@@ -136,5 +137,11 @@ def eval_mmlu(model_path, PEFT=True):
     return test_accuracy, subject_acc
 
 if __name__ == '__main__':
-    eval_mmlu('google/flan-t5-base', PEFT=False)
-    # eval_mmlu('models/google/flan-t5-base_LORA_1') 
+    for PEFT_METHOD in ["ADALORA", "DORA", "IA3", "LORA", "P_TUNING", "PREFIX_TUNING", "PROMPT_TUNING"]:
+        test_acc, subject_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1') 
+        with open(f'results/flan-t5-base_{PEFT_METHOD}_1_MMLU-acc.pickle', 'wb') as handle:
+            pkl.dump(test_acc, handle)
+        
+        with open(f'results/flan-t5-base_{PEFT_METHOD}_1_subject-accs.pickle', 'wb') as handle:
+            pkl.dump(subject_acc, handle)
+
