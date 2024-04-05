@@ -56,18 +56,23 @@ def eval_mmlu(model_path, PEFT=True):
         test_accuracy (float): model accuracy
         subject_acc (dict): dictionary with accuracy by subject, with values ([num_correct,total],accuracy)
     """
+    np.random.seed(0)
+    torch.manual_seed(0)
+
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     ## load the pretrained model and tokenizer
     if PEFT:
         config = PeftConfig.from_pretrained(model_path)
-        model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path)
+        model = AutoModelForSeq2SeqLM.from_pretrained(config.base_model_name_or_path,
+                                                      #load_in_8bit=True,
+                                                      )
         tokenizer = AutoTokenizer.from_pretrained(config.base_model_name_or_path)
-        model = PeftModel.from_pretrained(model, model_path)
-        #.to(device)
+        model = PeftModel.from_pretrained(model, model_path).to(device)
     else:
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
-        #.to(device)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_path
+                                                      #load_in_8bit=True
+                                                      ).to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     ## datasets
@@ -97,12 +102,10 @@ def eval_mmlu(model_path, PEFT=True):
 
         input_texts = CustomDataset(input_texts.map(remove_columns=['subject','question','choices']))
 
-        print(input_texts)
-
-        inputDL = DataLoader(input_texts, batch_size=16, shuffle=True, num_workers=6)
+        inputDL = DataLoader(input_texts, batch_size=32, shuffle=True, num_workers=0)
 
         for i, (prompts, answers) in enumerate(inputDL):
-
+            
             inputs = tokenizer(prompts, return_tensors="pt", padding=True).to(device)
             with torch.no_grad():
                 output_ids = model.generate(input_ids=inputs.input_ids)
@@ -110,7 +113,7 @@ def eval_mmlu(model_path, PEFT=True):
             output_answers = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
 
             first_chars = [x.strip()[0].upper() if x else '' for x in output_answers]
-            print(first_chars)
+            #print(first_chars)
 
             # map outputs to 0-3
             predicted_options = np.array([ord(x) for x in first_chars]) - ord('A')
@@ -133,4 +136,5 @@ def eval_mmlu(model_path, PEFT=True):
     return test_accuracy, subject_acc
 
 if __name__ == '__main__':
-    eval_mmlu('models/google/flan-t5-base_LORA_1')
+    eval_mmlu('google/flan-t5-base', PEFT=False)
+    # eval_mmlu('models/google/flan-t5-base_LORA_1') 
