@@ -31,7 +31,7 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
         output_dir=output_dir,
         per_device_train_batch_size=batch_size,
         learning_rate=1e-4,
-        optim="adafactor_torch",
+        optim="adamw_torch",
         num_train_epochs=num_epochs,
         save_strategy="no",
     )
