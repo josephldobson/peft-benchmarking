@@ -30,8 +30,8 @@ def train_and_save(peft_method, model_name, batch_size, num_epochs):
     training_args = Seq2SeqTrainingArguments(
         output_dir=output_dir,
         per_device_train_batch_size=batch_size,
-        learning_rate=1e-3,
-        optim="adamw_torch",
+        learning_rate=1e-4,
+        optim="adafactor_torch",
         num_train_epochs=num_epochs,
         save_strategy="no",
     )

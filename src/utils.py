@@ -77,7 +77,7 @@ def tokenize_function(tokenizer, model, x):
     output = ans[x['answer']] + tokenizer.eos_token
 
     tokenized_inputs = tokenizer(input, padding="max_length", truncation=True, max_length=model.config.max_length)
-    tokenized_targets = tokenizer(output_text, truncation=True)
+    tokenized_targets = tokenizer(output, truncation=True)
     return {
         "input_ids": tokenized_inputs["input_ids"],
         "attention_mask": tokenized_inputs["attention_mask"],
