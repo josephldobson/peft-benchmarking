@@ -26,6 +26,18 @@ subject_names = [
     'college_biology', 'college_physics', 'computer_security'
 ]
 
+flan_T5_base_values = [0.50, 0.195, 0.323, 0.250, 0.256, 0.240,
+                       0.250, 0.50, 0.429, 0.545, 0.417, 0.423,
+                       0.375, 0.192, 0.385, 0.258, 0.364, 0.370,
+                       0.50, 0.310, 0.286, 0.524, 0.214, 0.273,
+                       0.383, 0.406, 0.444, 0.50, 0.50, 0.50, 
+                       0.682, 0.435, 0.273, 0.385, 0.217, 0.409,
+                       0.455, 0.324, 0.282, 0.364, 0.316, 0.211,
+                       0.273, 0.485, 0.222, 0.379, 0.455, 0.250,
+                       0.273, 0.273, 0.60, 0.091, 0.235, 0.302,
+                       0.250, 0.727, 0.182]
+
+
 def clean_subject_accuracies():
     with open('src/pickle_contents.txt', 'r') as file:
         contents = file.read()
@@ -48,7 +60,8 @@ def clean_subject_accuracies():
     
 
 def make_save_histograms(method_accs):
-
+    method_accs['Flan-T5-Base'] = flan_T5_base_values
+    
     output_dir = "src/method_graphs"
     os.makedirs(output_dir, exist_ok=True)
 
@@ -64,17 +77,25 @@ def make_save_histograms(method_accs):
 
 def make_comparison__graph(method_accs):
 
+    method_accs['Flan-T5-Base'] = flan_T5_base_values
+
     plt.figure(figsize=(12, 8))
 
+    colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'orange', 'black']
+    method_colors = dict(zip(method_accs.keys(), colors))
+
     for method, accuracies in method_accs.items():
-        plt.plot(accuracies, marker='o', label=method)
+        x_values = list(range(len(accuracies))) 
+        y_values = accuracies  
+        plt.scatter(x_values, y_values, label=method, color=method_colors[method], s=100)  
 
     plt.title('Accuracy Values Comparison Across Methods')
-    plt.xlabel('Subject Index')
+    plt.xlabel('Subject')
     plt.ylabel('Accuracy')
-    plt.xticks(range(len(accuracies)), subject_names[:len(accuracies)], rotation=90) 
+    plt.xticks(range(len(accuracies)), subject_names[:len(accuracies)], rotation=90)
     plt.legend()
-    plt.tight_layout() 
+
+    plt.tight_layout()  
     file_path = os.path.join(output_dir, 'method_accuracy_comparisons.png')
     plt.savefig(file_path)
 
@@ -82,7 +103,7 @@ def make_comparison__graph(method_accs):
 def average_accuracies(method_accs):
 
     avg_accuracies = {method: sum(values) / len(values) for method, values in method_accs.items()}
-
+    avg_accuracies['Flan-T5-Base'] = 0.337
     sorted_methods = sorted(avg_accuracies.items(), key=lambda x: x[1], reverse=True)
     methods, averages = zip(*sorted_methods)
 
