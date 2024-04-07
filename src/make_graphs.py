@@ -72,7 +72,7 @@ def make_save_histograms(method_accs):
         plt.yticks(range(len(accuracies)), subject_names[:len(accuracies)])
         plt.xlabel('Accuracy')
         plt.tight_layout() 
-        file_path = os.path.join(output_dir, f'{method}_chart.png')
+        file_path = os.path.join(output_dir, f'{method}_chart.pdf')
         plt.savefig(file_path)
 
 def make_comparison__graph(method_accs):
@@ -96,7 +96,7 @@ def make_comparison__graph(method_accs):
     plt.legend()
 
     plt.tight_layout()  
-    file_path = os.path.join(output_dir, 'method_accuracy_comparisons.png')
+    file_path = os.path.join(output_dir, 'method_accuracy_comparisons.pdf')
     plt.savefig(file_path)
 
 
