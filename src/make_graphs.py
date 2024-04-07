@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import re
 import os
 from collections import defaultdict
+import numpy as np
+import seaborn as sns
 
 output_dir = "src/method_graphs"
 os.makedirs(output_dir, exist_ok=True)
@@ -79,23 +81,25 @@ def make_comparison__graph(method_accs):
 
     method_accs['Flan-T5-Base'] = flan_T5_base_values
 
-    plt.figure(figsize=(12, 8))
+    sns.set(context='notebook', style='darkgrid')
+    fig, ax = plt.subplots(figsize=(12, 15))
+    colors = sns.color_palette('rocket', n_colors=len(method_accs))
 
-    colors = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'orange', 'black']
-    method_colors = dict(zip(method_accs.keys(), colors))
+    for i, (method, accuracies) in enumerate(method_accs.items()):
+        y_values = np.arange(len(subject_names))
+        sns.scatterplot(ax=ax, x=accuracies, y=y_values, label=method, color=colors[i], s=30)
 
-    for method, accuracies in method_accs.items():
-        x_values = list(range(len(accuracies))) 
-        y_values = accuracies  
-        plt.scatter(x_values, y_values, label=method, color=method_colors[method], s=100)  
+    ax.set_ylabel('Subject', fontsize=16, style='italic')
+    ax.set_xlabel('Accuracy', fontsize=16, style='italic')
+    ax.set_yticks(np.arange(len(subject_names)))
+    ax.set_yticklabels(subject_names, fontsize=12)
 
-    plt.title('Accuracy Values Comparison Across Methods')
-    plt.xlabel('Subject')
-    plt.ylabel('Accuracy')
-    plt.xticks(range(len(accuracies)), subject_names[:len(accuracies)], rotation=90)
-    plt.legend()
+    ax.legend(title='Methods', title_fontsize='10', fontsize='8', loc='upper right', bbox_to_anchor=(1, 1), frameon=True)
 
-    plt.tight_layout()  
+    ax.set_ylim(-1, len(subject_names)) 
+
+    plt.tight_layout(rect=[0, 0, 0.75, 1])
+
     file_path = os.path.join(output_dir, 'method_accuracy_comparisons.pdf')
     plt.savefig(file_path)
 
