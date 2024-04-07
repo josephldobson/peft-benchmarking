@@ -113,24 +113,24 @@ def make_comparison__graph(method_accs):
 
 
 def average_accuracies(method_accs):
-
     avg_accuracies = {method: sum(values) / len(values) for method, values in method_accs.items()}
     avg_accuracies['Flan-T5-Base'] = 0.337
     sorted_methods = sorted(avg_accuracies.items(), key=lambda x: x[1], reverse=True)
     methods, averages = zip(*sorted_methods)
-
-    plt.figure(figsize=(10, 6))
-    plt.bar(methods, averages)
-
-    plt.title('Average Accuracies by Method')
-    plt.xlabel('Method')
-    plt.ylabel('Average Accuracy')
-    plt.xticks(rotation=45)
-
-    plt.tight_layout() 
-    file_path = os.path.join(output_dir, 'average_accuracy_by_method.png')
+    
+    sns.set(context='notebook', style='darkgrid')
+    plt.figure(figsize=(12, 6))  
+    
+    sns.barplot(x=list(methods), y=list(averages), palette='rocket')
+    
+    plt.title('Average Accuracies by Method', fontsize=18, fontweight='bold')
+    plt.xlabel('Method', fontsize=14, style='italic')
+    plt.ylabel('Average Accuracy', fontsize=14, style='italic')
+    plt.xticks(rotation=45, fontsize=12)  
+    
+    plt.tight_layout(rect=[0, 0, 0.75, 1]) 
+    file_path = os.path.join(output_dir, 'average_accuracy_by_method.pdf')  
     plt.savefig(file_path)
-    plt.close()
 
 
 if __name__ == '__main__':
