@@ -67,15 +67,23 @@ def make_save_histograms(method_accs):
     output_dir = "src/method_graphs"
     os.makedirs(output_dir, exist_ok=True)
 
-    for method, accuracies in method_accs.items():
-        plt.figure(figsize=(10, 15))  
-        plt.barh(range(len(accuracies)), accuracies)
-        plt.title(f'Accuracy Values for {method}')
-        plt.yticks(range(len(accuracies)), subject_names[:len(accuracies)])
-        plt.xlabel('Accuracy')
-        plt.tight_layout() 
+    sns.set(context='notebook', style='darkgrid')
+    colors = sns.color_palette('rocket', n_colors=len(method_accs))
+
+    for i, (method, accuracies) in enumerate(method_accs.items()):
+        plt.figure(figsize=(10, 15))
+        sns.barplot(x=accuracies, y=np.arange(len(accuracies)), orient='h', palette=[colors[i]])
+
+        plt.title(f'Accuracy values for {method}', fontsize=16, style='italic')
+        plt.yticks(np.arange(len(subject_names)), subject_names[:len(accuracies)], fontsize=12)
+        plt.xlabel('Accuracy', fontsize=14)
+        plt.ylabel('Subject', fontsize=14)
+        
+        plt.tight_layout(rect=[0, 0, 0.75, 1])
+
         file_path = os.path.join(output_dir, f'{method}_chart.pdf')
         plt.savefig(file_path)
+
 
 def make_comparison__graph(method_accs):
 
