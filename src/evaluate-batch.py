@@ -78,7 +78,7 @@ def eval_mmlu(model_path, PEFT=True):
         tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     ## datasets
-    mmlu_dataset = load_dataset("cais/mmlu", 'all', split='auxiliary_train')
+    mmlu_dataset = load_dataset("cais/mmlu", 'all', split='auxiliary_train[:10%]')
 
     ## metrics
     subjects = set(mmlu_dataset['subject'])
@@ -154,3 +154,16 @@ if __name__ == '__main__':
 
         with open(subject_accs_file_path, 'wb') as handle:
             pkl.dump(subject_acc, handle)
+
+    PEFT_METHOD = "google/flan-t5-base"
+    test_acc, subject_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1', PEFT=False)
+
+    # Forming the file paths
+    acc_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_MMLU-acc.pickle')
+    subject_accs_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_subject-accs.pickle')
+
+    with open(acc_file_path, 'wb') as handle:
+        pkl.dump(test_acc, handle)
+
+    with open(subject_accs_file_path, 'wb') as handle:
+        pkl.dump(subject_acc, handle)
