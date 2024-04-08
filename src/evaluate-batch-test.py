@@ -78,7 +78,7 @@ def eval_mmlu(model_path, PEFT=True):
         tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     ## datasets
-    mmlu_dataset = load_dataset("cais/mmlu", 'all', split='test')
+    mmlu_dataset = load_dataset("cais/mmlu", 'all', split='test[:50%]')
 
     ## metrics
     subjects = set(mmlu_dataset['subject'])
