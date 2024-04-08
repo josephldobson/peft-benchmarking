@@ -118,7 +118,7 @@ def eval_mmlu(model_path, PEFT=True):
             #print(first_chars)
 
             # map outputs to 0-3
-            predicted_options = np.array([ord(x) for x in first_chars]) - ord('A')
+            predicted_options = np.array([ord(x) - ord('A') if x else -1 for x in first_chars])
 
             batch_acc = np.sum(predicted_options==answers.numpy())
             subject_acc[subject][0][0] += batch_acc
