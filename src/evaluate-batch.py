@@ -129,7 +129,7 @@ if __name__ == '__main__':
     os.makedirs(results_dir, exist_ok=True)
 
     PEFT_METHOD = "flan-t5-base"
-    test_acc, subject_acc = eval_mmlu("google/flan-t5-base", PEFT=False)
+    test_acc = eval_mmlu("google/flan-t5-base", PEFT=False)
 
     # Forming the file paths
     acc_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_MMLU-acc.pickle')
@@ -138,13 +138,10 @@ if __name__ == '__main__':
     with open(acc_file_path, 'wb') as handle:
         pkl.dump(test_acc, handle)
 
-    with open(subject_accs_file_path, 'wb') as handle:
-        pkl.dump(subject_acc, handle)
-
 
     for PEFT_METHOD in ["P_TUNING", "PREFIX_TUNING", "PROMPT_TUNING"]:
         print(PEFT_METHOD)
-        test_acc, subject_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1')
+        test_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1')
 
         # Forming the file paths
         acc_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_MMLU-acc.pickle')
@@ -152,6 +149,3 @@ if __name__ == '__main__':
 
         with open(acc_file_path, 'wb') as handle:
             pkl.dump(test_acc, handle)
-
-        with open(subject_accs_file_path, 'wb') as handle:
-            pkl.dump(subject_acc, handle)
