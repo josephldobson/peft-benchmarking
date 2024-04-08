@@ -141,20 +141,6 @@ if __name__ == '__main__':
     results_dir = 'results'
     os.makedirs(results_dir, exist_ok=True)
 
-    PEFT_METHOD = "flan-t5-base"
-    test_acc, subject_acc = eval_mmlu("google/flan-t5-base", PEFT=False)
-
-    # Forming the file paths
-    acc_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_MMLU-acc.pickle')
-    subject_accs_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_subject-accs.pickle')
-
-    with open(acc_file_path, 'wb') as handle:
-        pkl.dump(test_acc, handle)
-
-    with open(subject_accs_file_path, 'wb') as handle:
-        pkl.dump(subject_acc, handle)
-
-
     for PEFT_METHOD in ["ADALORA", "DORA", "IA3", "LORA"]:
         print(PEFT_METHOD)
         test_acc, subject_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1')
