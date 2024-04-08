@@ -78,7 +78,7 @@ def eval_mmlu(model_path, PEFT=True):
         tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     ## datasets
-    mmlu_dataset = load_dataset("cais/mmlu", 'all', split='auxiliary_train[:10%]')
+    mmlu_dataset = load_dataset("cais/mmlu", 'all', split='auxiliary_train[5%:10%]+auxiliary_train[-5%:]')
 
     ## metrics
     subjects = set(mmlu_dataset['subject'])
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     results_dir = 'results'
     os.makedirs(results_dir, exist_ok=True)
 
-    for PEFT_METHOD in ["P_TUNING", "PREFIX_TUNING"]:
+    for PEFT_METHOD in ["ADALORA", "DORA", "IA3", "LORA"]:
         print(PEFT_METHOD)
         test_acc, subject_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1')
 
