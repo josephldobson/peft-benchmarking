@@ -10,7 +10,6 @@ from datasets import load_dataset, DatasetDict, load_from_disk
 import numpy as np
 import os
 import pickle as pkl
-import tqdm
 
 def format_mmlu_example(example, incl_answer = False, five_shot=False):
     # Extracting the components of the example
@@ -79,58 +78,71 @@ def eval_mmlu(model_path, PEFT=True):
         tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     ## datasets
-    mmlu_dataset = load_dataset("cais/mmlu", 'all', split='auxiliary_train[-10%:]')
+    mmlu_dataset = load_dataset("cais/mmlu", 'all', split='auxiliary-train')
+
+    ## metrics
+    subjects = set(mmlu_dataset['subject'])
+    subject_acc = {label: [[0, 0],0] for label in subjects}
+
+    for subject in subjects:
+        subject_acc[subject][0][1] = len(mmlu_dataset.filter(lambda example: example['subject'] == subject))-5
 
     ## evaluation
     correct = 0
-    total = len(mmlu_dataset) - 5*len(mmlu_dataset)
+    total = len(mmlu_dataset) - 5*len(set(mmlu_dataset['subject']))
 
-    print(f'\nEvaluating \n')
-    # FLAN uses 5-shot prompting for MMLU, so we use that here
-    dev_set, test_set = mmlu_dataset.select(range(5)), mmlu_dataset.select(range(5,len(mmlu_dataset)))
-    formatted_egs = [format_mmlu_example(eg,incl_answer=True)['formatted'] for eg in dev_set]
-    five_shot_text = "\n\n".join(formatted_egs)
-    begin = time.time()
+    for subject in subjects:
+        print(f'\nEvaluating {subject}\n')
+        # FLAN uses 5-shot prompting for MMLU, so we use that here
+        subject_set = mmlu_dataset.filter(lambda example: example['subject'] == subject)
+        dev_set, test_set = subject_set.select(range(5)), subject_set.select(range(5,len(subject_set)))
+        formatted_egs = [format_mmlu_example(eg,incl_answer=True)['formatted'] for eg in dev_set]
+        five_shot_text = "\n\n".join(formatted_egs)
+        begin = time.time()
 
-    input_texts = test_set.map(format_mmlu_example, fn_kwargs={"incl_answer": False, "five_shot": five_shot_text})
+        input_texts = test_set.map(format_mmlu_example, fn_kwargs={"incl_answer": False, "five_shot": five_shot_text})
 
-    input_texts = CustomDataset(input_texts.map(remove_columns=['subject','question','choices']))
+        input_texts = CustomDataset(input_texts.map(remove_columns=['subject','question','choices']))
 
-    inputDL = DataLoader(input_texts, batch_size=8, shuffle=True, num_workers=0)
+        inputDL = DataLoader(input_texts, batch_size=16, shuffle=True, num_workers=0)
 
-    for i, (prompts, answers) in enumerate(tqdm.tqdm(inputDL, desc="Evaluating")):
+        for i, (prompts, answers) in enumerate(inputDL):
 
-        inputs = tokenizer(prompts, return_tensors="pt", padding=True).to(device)
-        with torch.no_grad():
-            output_ids = model.generate(input_ids=inputs.input_ids)
+            inputs = tokenizer(prompts, return_tensors="pt", padding=True).to(device)
+            with torch.no_grad():
+                output_ids = model.generate(input_ids=inputs.input_ids)
 
-        output_answers = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
+            output_answers = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
 
-        first_chars = [x.strip()[0].upper() if x else '' for x in output_answers]
-        #print(first_chars)
+            first_chars = [x.strip()[0].upper() if x else '' for x in output_answers]
+            #print(first_chars)
 
-        # map outputs to 0-3
-        predicted_options = np.array([ord(x) - ord('A') if x else -1 for x in first_chars])
+            # map outputs to 0-3
+            predicted_options = np.array([ord(x) - ord('A') if x else -1 for x in first_chars])
 
-        batch_acc = np.sum(predicted_options==answers.numpy())
-        correct += batch_acc
+            batch_acc = np.sum(predicted_options==answers.numpy())
+            subject_acc[subject][0][0] += batch_acc
+
+            # print(f'batch {i}, acc {batch_acc}')
 
 
         end = time.time()
+
+        subject_acc[subject][1] = subject_acc[subject][0][0]/subject_acc[subject][0][1]
+        print(f'Accuracy on {subject}: {subject_acc[subject][1]:.3f}; took {end-begin}s')
 
     test_accuracy = correct/total
 
     print(f"Accuracy on MMLU: {test_accuracy:.4f}")
 
-    return test_accuracy
+    return test_accuracy, subject_acc
 
 if __name__ == '__main__':
-    results_dir = 'results'
+    results_dir = 'resultstest'
     os.makedirs(results_dir, exist_ok=True)
 
-    for PEFT_METHOD in ["ADALORA", "DORA", "IA3", "LORA"]:
-        print(PEFT_METHOD)
-        test_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1')
+    for PEFT_METHOD in ["ADALORA", "DORA", "IA3", "LORA", "P_TUNING", "PREFIX_TUNING", "PROMPT_TUNING"]:
+        test_acc, subject_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1')
 
         # Forming the file paths
         acc_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_MMLU-acc.pickle')
@@ -139,35 +151,5 @@ if __name__ == '__main__':
         with open(acc_file_path, 'wb') as handle:
             pkl.dump(test_acc, handle)
 
-
-# if __name__ == '__main__':
-#     results_dir = 'results'
-#     os.makedirs(results_dir, exist_ok=True)
-
-#     PEFT_METHOD = "flan-t5-base"
-#     test_acc, subject_acc = eval_mmlu("google/flan-t5-base", PEFT=False)
-
-#     # Forming the file paths
-#     acc_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_MMLU-acc.pickle')
-#     subject_accs_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_subject-accs.pickle')
-
-#     with open(acc_file_path, 'wb') as handle:
-#         pkl.dump(test_acc, handle)
-
-#     with open(subject_accs_file_path, 'wb') as handle:
-#         pkl.dump(subject_acc, handle)
-
-
-#     for PEFT_METHOD in ["P_TUNING", "PREFIX_TUNING", "PROMPT_TUNING"]:
-#         print(PEFT_METHOD)
-#         test_acc, subject_acc = eval_mmlu(f'models/google/flan-t5-base_{PEFT_METHOD}_1')
-
-#         # Forming the file paths
-#         acc_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_MMLU-acc.pickle')
-#         subject_accs_file_path = os.path.join(results_dir, f'flan-t5-base_{PEFT_METHOD}_1_subject-accs.pickle')
-
-#         with open(acc_file_path, 'wb') as handle:
-#             pkl.dump(test_acc, handle)
-
-#         with open(subject_accs_file_path, 'wb') as handle:
-#             pkl.dump(subject_acc, handle)
+        with open(subject_accs_file_path, 'wb') as handle:
+            pkl.dump(subject_acc, handle)

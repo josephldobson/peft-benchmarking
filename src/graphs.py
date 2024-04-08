@@ -1,3 +1,34 @@
+import os
+import pickle
+
+results_dir = 'src/results'
+output_file = 'src/pickle_contents.txt'
+
+with open(output_file, 'w') as output:
+
+    if os.path.isdir(results_dir):
+        output.write(f"The directory '{results_dir}' was found. Looking for pickle files...\n")
+        files = os.listdir(results_dir)
+
+        pickle_files = [file for file in files if file.endswith('.pickle')]
+
+        if not pickle_files:
+            output.write("No pickle files found in the directory.\n")
+        else:
+            for pickle_file in pickle_files:
+                file_path = os.path.join(results_dir, pickle_file)
+
+                try:
+                    with open(file_path, 'rb') as handle:
+                        data = pickle.load(handle)
+                    output.write(f"Contents of {pickle_file}:\n{data}\n\n")
+                except Exception as e:
+                    output.write(f"Failed to read {pickle_file}: {e}\n")
+    else:
+        output.write(f"The directory '{results_dir}' does not exist or is not in the current directory.\n")
+
+print(f"The contents of the pickle files have been written to {output_file}")
+
 import matplotlib.pyplot as plt
 import re
 import os
@@ -32,7 +63,7 @@ flan_T5_base_values = [0.50, 0.195, 0.323, 0.250, 0.256, 0.240,
                        0.250, 0.50, 0.429, 0.545, 0.417, 0.423,
                        0.375, 0.192, 0.385, 0.258, 0.364, 0.370,
                        0.50, 0.310, 0.286, 0.524, 0.214, 0.273,
-                       0.383, 0.406, 0.444, 0.50, 0.50, 0.50, 
+                       0.383, 0.406, 0.444, 0.50, 0.50, 0.50,
                        0.682, 0.435, 0.273, 0.385, 0.217, 0.409,
                        0.455, 0.324, 0.282, 0.364, 0.316, 0.211,
                        0.273, 0.485, 0.222, 0.379, 0.455, 0.250,
@@ -57,13 +88,13 @@ def clean_subject_accuracies():
         acc_values = [float(value) for value in acc_values if value]
         if acc_values:
             method_accs[method].extend(acc_values)
-    
+
     return method_accs
-    
+
 
 def make_save_histograms(method_accs):
     method_accs['Flan-T5-Base'] = flan_T5_base_values
-    
+
     output_dir = "src/method_graphs"
     os.makedirs(output_dir, exist_ok=True)
 
@@ -78,7 +109,7 @@ def make_save_histograms(method_accs):
         plt.yticks(np.arange(len(subject_names)), subject_names[:len(accuracies)], fontsize=12)
         plt.xlabel('Accuracy', fontsize=14)
         plt.ylabel('Subject', fontsize=14)
-        
+
         plt.tight_layout(rect=[0, 0, 0.75, 1])
 
         file_path = os.path.join(output_dir, f'{method}_chart.pdf')
@@ -104,7 +135,7 @@ def make_comparison__graph(method_accs):
 
     ax.legend(title='Methods', title_fontsize='10', fontsize='8', loc='upper right', bbox_to_anchor=(1, 1), frameon=True)
 
-    ax.set_ylim(-1, len(subject_names)) 
+    ax.set_ylim(-1, len(subject_names))
 
     plt.tight_layout(rect=[0, 0, 0.75, 1])
 
@@ -117,19 +148,19 @@ def average_accuracies(method_accs):
     avg_accuracies['Flan-T5-Base'] = 0.337
     sorted_methods = sorted(avg_accuracies.items(), key=lambda x: x[1], reverse=True)
     methods, averages = zip(*sorted_methods)
-    
+
     sns.set(context='notebook', style='darkgrid')
-    plt.figure(figsize=(12, 6))  
-    
+    plt.figure(figsize=(12, 6))
+
     sns.barplot(x=list(methods), y=list(averages), palette='rocket')
-    
+
     plt.title('Average Accuracies by Method', fontsize=18, fontweight='bold')
     plt.xlabel('Method', fontsize=14, style='italic')
     plt.ylabel('Average Accuracy', fontsize=14, style='italic')
-    plt.xticks(rotation=45, fontsize=12)  
-    
-    plt.tight_layout(rect=[0, 0, 0.75, 1]) 
-    file_path = os.path.join(output_dir, 'average_accuracy_by_method.pdf')  
+    plt.xticks(rotation=45, fontsize=12)
+
+    plt.tight_layout(rect=[0, 0, 0.75, 1])
+    file_path = os.path.join(output_dir, 'average_accuracy_by_method.pdf')
     plt.savefig(file_path)
 
 
