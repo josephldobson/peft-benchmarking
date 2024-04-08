@@ -138,7 +138,7 @@ def eval_mmlu(model_path, PEFT=True):
     return test_accuracy, subject_acc
 
 if __name__ == '__main__':
-    results_dir = 'results'
+    results_dir = 'resultstest'
     os.makedirs(results_dir, exist_ok=True)
 
     for PEFT_METHOD in ["LORA", "P_TUNING", "PREFIX_TUNING", "PROMPT_TUNING"]:
