@@ -1,2 +1,3 @@
 # peft-benchmarking
-Group coursework on benchmarking various peft methods for transfer learning on GPT2
+
+Group coursework on benchmarking various peft methods on the MMLU dataset using flan-t5-base

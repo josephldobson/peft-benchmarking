@@ -3,4 +3,12 @@ channels:
   - defaults
   - pip
 dependencies:
-  - trans
+  - transformers
+  - datasets
+  - torch
+  - pandas
+  - numpy
+  - tqdm
+  - SentencePiece
+  - protobuf
+  - peft
